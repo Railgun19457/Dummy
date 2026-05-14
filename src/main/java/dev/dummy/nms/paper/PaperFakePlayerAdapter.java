@@ -3,6 +3,7 @@ package dev.dummy.nms.paper;
 import com.mojang.authlib.GameProfile;
 import dev.dummy.DummyPlugin;
 import dev.dummy.dummy.DummyCreateRequest;
+import dev.dummy.i18n.LocalizedException;
 import dev.dummy.nms.DummyHandle;
 import dev.dummy.nms.FakePlayerAdapter;
 import java.net.InetAddress;
@@ -35,7 +36,7 @@ public final class PaperFakePlayerAdapter implements FakePlayerAdapter {
     public DummyHandle spawn(DummyCreateRequest request) {
         Location location = request.location();
         if (!(location.getWorld() instanceof CraftWorld craftWorld)) {
-            throw new IllegalArgumentException("Spawn world is not a CraftWorld");
+            throw new LocalizedException("error.craft-world-required");
         }
 
         CraftServer craftServer = (CraftServer) Bukkit.getServer();
@@ -58,8 +59,9 @@ public final class PaperFakePlayerAdapter implements FakePlayerAdapter {
         player.teleport(location);
         resetSurvivalState(player);
 
-        BukkitTask tickerTask = new DummyTicker(serverPlayer).runTaskTimer(plugin, 0L, 1L);
-        PaperDummyHandle handle = new PaperDummyHandle(serverPlayer, tickerTask);
+        DummyTicker ticker = new DummyTicker(serverPlayer);
+        BukkitTask tickerTask = ticker.runTaskTimer(plugin, 0L, 1L);
+        PaperDummyHandle handle = new PaperDummyHandle(serverPlayer, ticker, tickerTask);
         handle.applySkin(request.skin());
         handle.applySettings(request.name(), request.settings());
         return handle;

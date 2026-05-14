@@ -1,0 +1,166 @@
+# Dummy
+
+语言 / Language: 简体中文 | [English](README.en_US.md)
+
+![:Dummy](https://count.getloli.com/@railgun19457_Dummy?name=railgun19457_Dummy&theme=minecraft&padding=6&offset=0&align=top&scale=1&pixelated=1&darkmode=auto)
+
+Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端真实假玩家实体提供背包、装备、经验、动作、皮肤、持久化和区块加载能力。
+
+## 功能特性
+
+- 基于 Paper + NMS 创建真实 `ServerPlayer` 假人
+- 支持召唤、移除、列表、重载、复活和传送管理
+- 支持右键假人打开 GUI，管理背包、装备栏和副手栏
+- 支持假人配置：无敌、碰撞、幽灵模式、区块加载、Tab 显示和名字格式
+- 支持默认继承召唤者皮肤、按正版玩家名拉取皮肤、手动设置 texture value/signature
+- 支持皮肤缓存，减少重复请求 Mojang API
+- 支持假人背包、装备、副手、经验、皮肤、配置和位置持久化
+- 支持移除后保留假人数据，同名重新召唤可恢复已保存资料
+- 支持按世界 `simulation-distance` 加载假人周围区块，用于红石和实体挂机场景
+- 支持 `zh_CN` 和 `en_US` 双语消息
+- 支持 `/dummy` 和 `/dm` 命令别名
+
+## 运行环境
+
+- Java 21+
+- Paper 1.21.11、26.1.2
+
+## 安装
+
+1. 从 Release 下载插件 Jar（或本地构建）。
+2. 放入 Paper 服务端的 `plugins` 目录。
+3. 启动服务端，首次启动会自动生成配置文件：
+   - `plugins/Dummy/config.yml`
+   - `plugins/Dummy/lang/zh_CN.yml`
+   - `plugins/Dummy/lang/en_US.yml`
+   - `plugins/Dummy/dummies.yml`
+   - `plugins/Dummy/skins.yml`
+
+## 命令
+
+- `/dummy` 显示插件帮助信息
+- `/dm` `/dummy` 的别名
+- `/dummy spawn <name>` 在当前位置召唤假人
+- `/dummy remove <name|all>` 移除指定假人或全部假人
+- `/dummy list` 查看当前假人列表
+- `/dummy reload` 重载配置和语言文件
+- `/dummy config <name> <key> <value>` 修改假人配置
+- `/dummy skin <name> player <playerName>` 使用指定正版玩家皮肤
+- `/dummy skin <name> texture <value> [signature]` 使用 texture value/signature 设置皮肤
+- `/dummy skin <name> clear` 清除假人皮肤
+- `/dummy exp <name> <amount|all>` 将假人经验转移给执行命令的玩家
+- `/dummy inv <name>` 打开假人背包、装备栏和副手栏
+- `/dummy tpto <name>` 将玩家传送到假人处
+- `/dummy tphere <name>` 将假人传送到玩家当前位置
+- `/dummy tps <name>` 交换玩家和假人的位置
+- `/dummy revive <name>` 在玩家当前位置复活已死亡假人
+- `/dummy actions <name> <action> ...` 控制假人执行动作
+
+## 动作
+
+可用动作：
+
+- `attack` 攻击视线或附近实体
+- `chat <message>` 发送聊天消息
+- `command <command>` 以假人身份执行命令
+- `drop` 丢弃当前物品
+- `hold <0-8>` 切换快捷栏槽位
+- `jump` 跳跃
+- `look <yaw> <pitch>` 转向指定角度
+- `look <north|east|south|west|entity>` 朝向固定方向或最近实体
+- `lookat <x> <y> <z>` 看向指定方块坐标，支持 `~`、`~1`、`~-1`
+- `mine` 挖掘视线内方块
+- `mount` 骑乘或离开附近可骑乘实体
+- `move [speed]` 朝当前视线方向移动
+- `sneak [toggle|on|off]` 切换潜行状态
+- `sprint [toggle|on|off]` 切换疾跑状态
+- `swap` 交换主手和副手物品
+- `use` 使用主手物品
+- `stop [action]` 停止全部动作或指定动作
+
+### 动作示例
+
+```text
+/dummy actions bot attack
+/dummy actions bot attack repeat 20
+/dummy actions bot attack repeat 20 1200
+/dummy actions bot look entity repeat 5
+/dummy actions bot lookat ~ ~ ~5
+/dummy actions bot move 0.25 repeat 1 100
+/dummy actions bot stop
+/dummy actions bot stop attack
+```
+
+动作模式说明：
+
+- 未指定模式时执行一次。
+- `once` 表示单次执行。
+- `repeat <intervalTicks> [durationTicks]` 表示按 tick 间隔重复执行，可选持续时间。
+- 部分动作也支持后缀写法：`<action> <args...> repeat <intervalTicks> [durationTicks]`。
+
+## 权限
+
+- `dummy.command`：允许使用基础命令，默认 OP
+- `dummy.command.spawn`：允许召唤假人，默认 OP
+- `dummy.command.remove`：允许移除假人，默认 OP
+- `dummy.command.list`：允许查看假人列表，默认 OP
+- `dummy.command.reload`：允许重载配置，默认 OP
+- `dummy.command.config`：允许修改假人配置，默认 OP
+- `dummy.command.skin`：允许修改假人皮肤，默认 OP
+- `dummy.command.exp`：允许转移假人经验，默认 OP
+- `dummy.command.inv`：允许打开假人背包，默认 OP
+- `dummy.command.tpto`：允许传送到假人，默认 OP
+- `dummy.command.tphere`：允许将假人传送到当前位置，默认 OP
+- `dummy.command.tps`：允许交换位置，默认 OP
+- `dummy.command.revive`：允许复活假人，默认 OP
+- `dummy.command.actions`：允许控制假人动作，默认 OP
+
+## 配置概览
+
+`config.yml` 主要分区：
+
+- `language`：语言文件，内置 `zh_CN`、`en_US`
+- `defaults`：新建假人的默认配置
+- `limits`：全服假人数量上限和单玩家假人数量上限，`-1` 表示无限制
+- `storage`：启动恢复和移除后保留数据
+- `inventory`：假人移除或插件关闭时是否掉落背包、装备和副手物品
+- `commands`：假人创建前后由控制台执行的命令
+- `death`：假人死亡后的自动移除或自动复活设置
+- `actions`：动作系统配置，例如骑乘搜索范围
+
+可通过命令修改的假人配置项：
+
+- `invulnerable`：是否无敌
+- `collision`：是否启用碰撞
+- `ghost`：幽灵模式，假人会无敌、无碰撞、无重力且不加载区块
+- `chunk-loader`：是否按世界 `simulation-distance` 加载周围区块
+- `show-in-tab`：是否显示在 Tab 列表
+- `name-format`：假人显示名格式，支持 `%name%`
+
+创建前后命令支持的占位符：
+
+- `%dummy%`：假人名称
+- `%uuid%`：假人 UUID
+- `%creator%`：创建者名称
+- `%creator_uuid%`：创建者 UUID
+- `%world%`：召唤世界
+- `%x%`：召唤 X 坐标
+- `%y%`：召唤 Y 坐标
+- `%z%`：召唤 Z 坐标
+
+## 数据文件
+
+- `dummies.yml`：保存当前假人和已移除假人的数据
+- `skins.yml`：保存通过玩家名拉取到的皮肤缓存
+- `lang/zh_CN.yml`：中文消息文件
+- `lang/en_US.yml`：英文消息文件
+
+## 本地构建
+
+```bash
+gradle clean build
+```
+
+构建产物位于：
+
+- `build/libs/Dummy-<version>.jar`

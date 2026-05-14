@@ -6,11 +6,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public final class DummyTicker extends BukkitRunnable {
-    private final ServerPlayer handle;
+    private ServerPlayer handle;
     private boolean firstTick = true;
 
     public DummyTicker(ServerPlayer handle) {
         this.handle = handle;
+    }
+
+    public void handle(ServerPlayer handle) {
+        this.handle = handle;
+        this.firstTick = true;
     }
 
     @Override

@@ -1,15 +1,52 @@
-# Supported server versions for the first development target.
-supported-versions:
-  - "1.21.11"
-  - "26.1.2"
+# Language file under plugins/Dummy/lang/. Supported built-in values: zh_CN, en_US.
+language: zh_CN
 
+# Default settings applied when a new dummy is created and no saved profile is reused.
 defaults:
   invulnerable: false
   collision: true
   ghost: false
-  chunk-loader: false
-  show-in-tab: true
+  # If true, keep chunks around the dummy loaded using the world's simulation-distance.
+  # This is intended to match real-player redstone/entity ticking range for AFK machines.
+  chunk-loader: true
+  show-in-tab: false
   name-format: "%name%"
+  
+# Spawn limits. Use -1 for unlimited.
+limits:
+  # Maximum number of active dummies on the whole server.
+  server-total: -1
+  # Maximum number of active dummies created by each player. Console is not limited by this value.
+  per-player: -1
 
 storage:
+  # Restore active dummies from dummies.yml when the plugin starts.
   restore-on-startup: true
+  # If enabled, removing a dummy stores its inventory, skin, exp and settings.
+  # Re-spawning the same name will reuse that data at the new spawn location.
+  keep-removed-data: true
+
+inventory:
+  # Drop all inventory, armor and offhand items when a dummy leaves through remove/shutdown.
+  drop-on-quit: false
+
+commands:
+  # Commands executed by console before creating a dummy player.
+  # Placeholders: %dummy%, %uuid%, %creator%, %creator_uuid%, %world%, %x%, %y%, %z%
+  before-spawn: []
+  # Commands executed by console after the dummy has joined the server.
+  # Uses the same placeholders as before-spawn.
+  after-spawn: []
+
+death:
+  # If true, dead dummies are removed after death. This takes priority over auto-revive.
+  auto-remove: false
+  # If true and auto-remove is false, dead dummies respawn automatically.
+  auto-revive: false
+  # Delay before auto-revive runs, in ticks.
+  auto-revive-delay-ticks: 20
+
+actions:
+  mount:
+    # Search radius for nearby mountable living entities.
+    range: 4

@@ -15,5 +15,9 @@ public interface DummyHandle {
 
     void applySkin(DummySkin skin);
 
+    void respawn();
+
+    void hideEntity();
+
     void remove(Component reason);
 }

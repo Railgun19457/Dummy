@@ -3,15 +3,18 @@ package dev.dummy.action;
 import dev.dummy.DummyPlugin;
 import dev.dummy.dummy.DummyInstance;
 import dev.dummy.dummy.DummyManager;
+import dev.dummy.i18n.LocalizedException;
+import io.papermc.paper.entity.LookAnchor;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.FluidCollisionMode;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -19,11 +22,13 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+import net.minecraft.core.BlockPos;
 
 public final class DummyActionService {
     private final DummyPlugin plugin;
     private final DummyManager dummyManager;
     private final Map<UUID, Map<String, BukkitTask>> tasks = new LinkedHashMap<>();
+    private final Map<UUID, MineState> mineStates = new LinkedHashMap<>();
 
     public DummyActionService(DummyPlugin plugin, DummyManager dummyManager) {
         this.plugin = plugin;
@@ -51,7 +56,15 @@ public final class DummyActionService {
                 stop(dummy, normalized);
                 return;
             }
-            perform(dummy, normalized, args);
+            try {
+                perform(dummy, normalized, args);
+            } catch (LocalizedException ex) {
+                plugin.getLogger().fine("Skipped dummy action '" + normalized + "' for " + dummy.name() + ": " + ex.key());
+            } catch (RuntimeException ex) {
+                plugin.getLogger().warning("Stopped dummy action '" + normalized + "' for " + dummy.name() + ": " + ex.getMessage());
+                stop(dummy, normalized);
+                return;
+            }
             elapsed[0] += interval;
             if (durationTicks > 0 && elapsed[0] >= durationTicks) {
                 stop(dummy, normalized);
@@ -62,22 +75,23 @@ public final class DummyActionService {
 
     public int stop(DummyInstance dummy, String action) {
         Map<String, BukkitTask> dummyTasks = tasks.get(dummy.uuid());
-        if (dummyTasks == null || dummyTasks.isEmpty()) {
-            return 0;
-        }
         if (action == null || action.isBlank()) {
-            int size = dummyTasks.size();
-            dummyTasks.values().forEach(BukkitTask::cancel);
-            dummyTasks.clear();
+            int size = 0;
+            if (dummyTasks != null) {
+                size = dummyTasks.size();
+                dummyTasks.values().forEach(BukkitTask::cancel);
+                dummyTasks.clear();
+            }
+            resetAll(dummy);
             return size;
         }
 
-        BukkitTask task = dummyTasks.remove(normalize(action));
-        if (task == null) {
-            return 0;
+        String normalized = normalize(action);
+        BukkitTask task = dummyTasks == null ? null : dummyTasks.remove(normalized);
+        if (task != null) {
+            task.cancel();
         }
-        task.cancel();
-        return 1;
+        return resetAction(dummy, normalized) || task != null ? 1 : 0;
     }
 
     public static String[] tail(String[] args, int from) {
@@ -97,16 +111,15 @@ public final class DummyActionService {
             case "hold" -> hold(player, args);
             case "jump" -> jump(player);
             case "look" -> look(player, args);
+            case "lookat" -> lookAt(player, args);
             case "mine" -> mine(player);
             case "mount" -> mount(player);
             case "move" -> move(player, args);
-            case "sleep" -> sleep(player);
-            case "sneak" -> player.setSneaking(parseToggle(args, true));
-            case "sprint" -> player.setSprinting(parseToggle(args, true));
+            case "sneak" -> player.setSneaking(parseToggle(args, player.isSneaking()));
+            case "sprint" -> player.setSprinting(parseToggle(args, player.isSprinting()));
             case "swap" -> swapHands(player);
             case "use" -> use(player);
-            case "wakeup" -> player.wakeup(false);
-            default -> throw new IllegalArgumentException("Unknown action: " + action);
+            default -> throw new LocalizedException("error.unknown-action", action);
         }
     }
 
@@ -116,7 +129,7 @@ public final class DummyActionService {
             target = nearestEntity(player, 4.0D);
         }
         if (target == null || target.equals(player)) {
-            throw new IllegalArgumentException("No target entity in range");
+            throw new LocalizedException("error.no-target-entity");
         }
         player.attack(target);
         player.swingMainHand();
@@ -124,11 +137,11 @@ public final class DummyActionService {
 
     private void hold(Player player, String[] args) {
         if (args.length == 0) {
-            throw new IllegalArgumentException("hold requires a hotbar slot 0-8");
+            throw new LocalizedException("error.hold-requires-slot");
         }
         int slot = Integer.parseInt(args[0]);
         if (slot < 0 || slot > 8) {
-            throw new IllegalArgumentException("hold slot must be 0-8");
+            throw new LocalizedException("error.hold-slot-range");
         }
         player.getInventory().setHeldItemSlot(slot);
     }
@@ -138,28 +151,81 @@ public final class DummyActionService {
         velocity.setY(Math.max(velocity.getY(), 0.42D));
         player.setVelocity(velocity);
         player.setJumping(true);
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> player.setJumping(false), 2L);
     }
 
     private void look(Player player, String[] args) {
+        if (args.length == 1) {
+            switch (args[0].toLowerCase(Locale.ROOT)) {
+                case "north" -> player.setRotation(180.0F, 0.0F);
+                case "east" -> player.setRotation(-90.0F, 0.0F);
+                case "south" -> player.setRotation(0.0F, 0.0F);
+                case "west" -> player.setRotation(90.0F, 0.0F);
+                case "entity" -> lookAtNearestEntity(player);
+                default -> throw new LocalizedException("error.look-requires-rotation");
+            }
+            return;
+        }
         if (args.length < 2) {
-            throw new IllegalArgumentException("look requires yaw and pitch");
+            throw new LocalizedException("error.look-requires-rotation");
         }
         player.setRotation(Float.parseFloat(args[0]), Float.parseFloat(args[1]));
     }
 
+    private void lookAt(Player player, String[] args) {
+        if (args.length != 3) {
+            throw new LocalizedException("error.lookat-requires-coordinates");
+        }
+        Location location = player.getLocation();
+        int x = parseBlockCoordinate(args[0], location.getBlockX());
+        int y = parseBlockCoordinate(args[1], location.getBlockY());
+        int z = parseBlockCoordinate(args[2], location.getBlockZ());
+        player.lookAt(x + 0.5D, y + 0.5D, z + 0.5D, LookAnchor.EYES);
+    }
+
     private void mine(Player player) {
         Block block = player.getTargetBlockExact(5, FluidCollisionMode.NEVER);
-        if (block == null || block.getType() == Material.AIR) {
-            throw new IllegalArgumentException("No target block in range");
+        if (block == null || block.isEmpty()) {
+            mineStates.remove(player.getUniqueId());
+            throw new LocalizedException("error.no-target-block");
         }
+
+        float breakSpeed = block.getBreakSpeed(player);
+        if (breakSpeed <= 0.0F) {
+            mineStates.remove(player.getUniqueId());
+            throw new LocalizedException("error.block-unbreakable");
+        }
+
+        UUID uuid = player.getUniqueId();
+        int tick = Math.max(0, player.getTicksLived());
+        MineState state = mineStates.get(uuid);
+        if (state == null || !state.matches(block)) {
+            state = new MineState(block.getWorld().getUID(), block.getX(), block.getY(), block.getZ(), tick, 0.0F);
+        }
+
+        int elapsedTicks = Math.max(1, Math.min(20, tick - state.tick()));
+        float progress = player.getGameMode() == GameMode.CREATIVE ? 1.0F : state.progress() + breakSpeed * elapsedTicks;
         player.swingMainHand();
-        player.breakBlock(block);
+        if (progress < 1.0F) {
+            mineStates.put(uuid, new MineState(state.worldUuid(), state.x(), state.y(), state.z(), tick, progress));
+            return;
+        }
+
+        mineStates.remove(uuid);
+        if (!destroyBlock(player, block)) {
+            throw new LocalizedException("error.mine-failed");
+        }
+        dummyManager.save();
     }
 
     private void mount(Player player) {
-        Entity target = nearestEntity(player, 3.0D);
+        if (player.isInsideVehicle()) {
+            player.leaveVehicle();
+            return;
+        }
+        Entity target = nearestEntity(player, plugin.getConfig().getDouble("actions.mount.range", 4.0D));
         if (target == null) {
-            throw new IllegalArgumentException("No mountable entity in range");
+            throw new LocalizedException("error.no-mountable-entity");
         }
         target.addPassenger(player);
     }
@@ -171,14 +237,6 @@ public final class DummyActionService {
             return;
         }
         player.setVelocity(direction.normalize().multiply(speed).setY(player.getVelocity().getY()));
-    }
-
-    private void sleep(Player player) {
-        Block block = player.getTargetBlockExact(5, FluidCollisionMode.NEVER);
-        Location location = block == null ? player.getLocation() : block.getLocation();
-        if (!player.sleep(location, true)) {
-            throw new IllegalArgumentException("Dummy cannot sleep at target location");
-        }
     }
 
     private void swapHands(Player player) {
@@ -205,16 +263,82 @@ public final class DummyActionService {
                 .orElse(null);
     }
 
-    private boolean parseToggle(String[] args, boolean fallback) {
-        if (args.length == 0) {
-            return fallback;
+    private void lookAtNearestEntity(Player player) {
+        Entity target = nearestEntity(player, 8.0D);
+        if (target == null) {
+            throw new LocalizedException("error.no-target-entity");
         }
-        return Boolean.parseBoolean(args[0]);
+        player.lookAt(target, io.papermc.paper.entity.LookAnchor.EYES, io.papermc.paper.entity.LookAnchor.EYES);
+    }
+
+    private boolean parseToggle(String[] args, boolean currentValue) {
+        if (args.length > 1) {
+            throw new LocalizedException("error.toggle-argument");
+        }
+        if (args.length == 0) {
+            return !currentValue;
+        }
+        String value = args[0].toLowerCase(Locale.ROOT);
+        if (value.equals("toggle")) {
+            return !currentValue;
+        }
+        if (value.equals("on")) {
+            return true;
+        }
+        if (value.equals("off")) {
+            return false;
+        }
+        throw new LocalizedException("error.toggle-argument");
+    }
+
+    private void resetAll(DummyInstance dummy) {
+        for (String action : java.util.List.of("jump", "move", "mine", "sneak", "sprint", "mount", "use")) {
+            resetAction(dummy, action);
+        }
+    }
+
+    private boolean resetAction(DummyInstance dummy, String action) {
+        Player player = dummy.player();
+        switch (action) {
+            case "jump" -> player.setJumping(false);
+            case "move" -> player.setVelocity(player.getVelocity().setX(0.0D).setZ(0.0D));
+            case "mine" -> mineStates.remove(player.getUniqueId());
+            case "sneak" -> player.setSneaking(false);
+            case "sprint" -> player.setSprinting(false);
+            case "mount" -> player.leaveVehicle();
+            case "use" -> player.clearActiveItem();
+            default -> {
+                return false;
+            }
+        }
+        dummyManager.save();
+        return true;
+    }
+
+    private boolean destroyBlock(Player player, Block block) {
+        if (player instanceof CraftPlayer craftPlayer) {
+            return craftPlayer.getHandle().gameMode.destroyBlock(new BlockPos(block.getX(), block.getY(), block.getZ()));
+        }
+        return player.breakBlock(block);
+    }
+
+    private int parseBlockCoordinate(String raw, int base) {
+        try {
+            if (raw.equals("~")) {
+                return base;
+            }
+            if (raw.startsWith("~")) {
+                return base + Integer.parseInt(raw.substring(1));
+            }
+            return Integer.parseInt(raw);
+        } catch (NumberFormatException ex) {
+            throw new LocalizedException("error.invalid-coordinate", raw);
+        }
     }
 
     private String join(String[] args) {
         if (args.length == 0) {
-            throw new IllegalArgumentException("Action requires additional arguments");
+            throw new LocalizedException("error.action-requires-arguments");
         }
         return String.join(" ", args);
     }
@@ -225,5 +349,14 @@ public final class DummyActionService {
 
     private String normalize(String action) {
         return action.toLowerCase(Locale.ROOT);
+    }
+
+    private record MineState(UUID worldUuid, int x, int y, int z, int tick, float progress) {
+        private boolean matches(Block block) {
+            return block.getWorld().getUID().equals(worldUuid)
+                    && block.getX() == x
+                    && block.getY() == y
+                    && block.getZ() == z;
+        }
     }
 }

@@ -6,6 +6,8 @@ import org.bukkit.inventory.ItemStack;
 
 public record DummyRecord(
         UUID uuid,
+        UUID creatorUuid,
+        String creatorName,
         String name,
         Location location,
         DummySettings settings,

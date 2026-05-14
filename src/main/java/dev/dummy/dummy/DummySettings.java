@@ -1,5 +1,6 @@
 package dev.dummy.dummy;
 
+import dev.dummy.i18n.LocalizedException;
 import org.bukkit.configuration.ConfigurationSection;
 
 public record DummySettings(
@@ -37,7 +38,7 @@ public record DummySettings(
             case "chunk-loader" -> new DummySettings(invulnerable, collision, ghost, parseBoolean(key, rawValue), showInTab, nameFormat);
             case "show-in-tab" -> new DummySettings(invulnerable, collision, ghost, chunkLoader, parseBoolean(key, rawValue), nameFormat);
             case "name-format" -> new DummySettings(invulnerable, collision, ghost, chunkLoader, showInTab, rawValue);
-            default -> throw new IllegalArgumentException("Unknown config key: " + key);
+            default -> throw new LocalizedException("error.unknown-config-key", key);
         };
     }
 
@@ -52,6 +53,6 @@ public record DummySettings(
         if (value.equalsIgnoreCase("false") || value.equalsIgnoreCase("no") || value.equalsIgnoreCase("off")) {
             return false;
         }
-        throw new IllegalArgumentException(key + " must be true or false");
+        throw new LocalizedException("error.boolean-required", key);
     }
 }

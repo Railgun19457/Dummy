@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 public final class SkinService {
     private final DummyPlugin plugin;
@@ -43,6 +44,16 @@ public final class SkinService {
             save();
             return skin;
         });
+    }
+
+    public DummySkin skinFromPlayer(Player player) {
+        return player.getPlayerProfile()
+                .getProperties()
+                .stream()
+                .filter(candidate -> candidate.getName().equals("textures"))
+                .findFirst()
+                .map(property -> DummySkin.player(player.getName(), property.getValue(), property.getSignature()))
+                .orElse(DummySkin.NONE);
     }
 
     private void load() {

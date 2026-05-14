@@ -5,32 +5,26 @@ import dev.dummy.command.DummyCommand;
 import dev.dummy.dummy.DummyManager;
 import dev.dummy.dummy.DummyStorage;
 import dev.dummy.gui.DummyGuiListener;
+import dev.dummy.i18n.I18n;
 import dev.dummy.listener.DummyLifecycleListener;
 import dev.dummy.nms.FakePlayerAdapter;
 import dev.dummy.nms.paper.PaperFakePlayerAdapter;
 import dev.dummy.skin.SkinService;
 import java.util.List;
 import java.util.logging.Level;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class DummyPlugin extends JavaPlugin {
     private DummyManager dummyManager;
+    private I18n i18n;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        saveResource("messages.yml", false);
-
-        String minecraftVersion = Bukkit.getMinecraftVersion();
-        if (!isSupported(minecraftVersion)) {
-            getComponentLogger().warn(Component.text(
-                    "Unsupported Paper version " + minecraftVersion + "; first target supports 1.21.11 and 26.1.2.",
-                    NamedTextColor.YELLOW
-            ));
-        }
+        this.i18n = new I18n(this);
+        this.i18n.saveDefaults();
+        this.i18n.reload();
 
         try {
             FakePlayerAdapter adapter = new PaperFakePlayerAdapter(this);
@@ -44,10 +38,11 @@ public final class DummyPlugin extends JavaPlugin {
 
         SkinService skinService = new SkinService(this);
         DummyActionService actionService = new DummyActionService(this, dummyManager);
-        DummyCommand dummyCommand = new DummyCommand(this, dummyManager, skinService, actionService);
-        registerCommand("dummy", "Manage dummy players.", List.of("dummies"), dummyCommand);
-        Bukkit.getPluginManager().registerEvents(new DummyLifecycleListener(dummyManager), this);
-        Bukkit.getPluginManager().registerEvents(new DummyGuiListener(this, dummyManager), this);
+        DummyGuiListener guiListener = new DummyGuiListener(this, dummyManager, i18n);
+        DummyCommand dummyCommand = new DummyCommand(this, dummyManager, skinService, actionService, i18n, guiListener);
+        registerCommand("dummy", "Manage dummy players.", List.of("dm"), dummyCommand);
+        Bukkit.getPluginManager().registerEvents(new DummyLifecycleListener(this, dummyManager, actionService), this);
+        Bukkit.getPluginManager().registerEvents(guiListener, this);
 
         if (getConfig().getBoolean("storage.restore-on-startup", true)) {
             Bukkit.getScheduler().runTask(this, () -> dummyManager.restoreSavedDummies());
@@ -63,10 +58,10 @@ public final class DummyPlugin extends JavaPlugin {
 
     public void reloadDummyConfig() {
         reloadConfig();
+        i18n.reload();
     }
 
-    private boolean isSupported(String minecraftVersion) {
-        List<String> supported = getConfig().getStringList("supported-versions");
-        return supported.isEmpty() || supported.contains(minecraftVersion);
+    public I18n i18n() {
+        return i18n;
     }
 }

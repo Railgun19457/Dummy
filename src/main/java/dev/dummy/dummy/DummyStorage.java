@@ -35,51 +35,27 @@ public final class DummyStorage {
 
         List<DummyRecord> records = new ArrayList<>();
         for (String key : root.getKeys(false)) {
-            ConfigurationSection section = root.getConfigurationSection(key);
-            if (section == null) {
-                continue;
+            DummyRecord record = readRecord(root.getConfigurationSection(key), key);
+            if (record != null) {
+                records.add(record);
             }
-
-            String worldName = section.getString("world", "");
-            World world = Bukkit.getWorld(worldName);
-            if (world == null) {
-                plugin.getLogger().warning("Skipping dummy '" + key + "': world '" + worldName + "' is not loaded");
-                continue;
-            }
-
-            UUID uuid = parseUuid(section.getString("uuid"), key);
-            String name = section.getString("name", key);
-            Location location = new Location(
-                    world,
-                    section.getDouble("x"),
-                    section.getDouble("y"),
-                    section.getDouble("z"),
-                    (float) section.getDouble("yaw"),
-                    (float) section.getDouble("pitch")
-            );
-            ConfigurationSection settingsSection = section.getConfigurationSection("settings");
-            DummySettings settings = settingsSection == null
-                    ? DummySettings.defaults(plugin.getConfig())
-                    : DummySettings.fromConfig(settingsSection);
-            DummySkin skin = DummySkin.fromConfig(section.getConfigurationSection("skin"));
-            DummyExperience experience = DummyExperience.fromConfig(section.getConfigurationSection("experience"));
-            records.add(new DummyRecord(
-                    uuid,
-                    name,
-                    location,
-                    settings,
-                    skin,
-                    readItems(section, "inventory.storage"),
-                    readItems(section, "inventory.armor"),
-                    section.getItemStack("inventory.offhand"),
-                    experience
-            ));
         }
         return records;
     }
 
+    public DummyRecord loadRemoved(String name) {
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        ConfigurationSection root = config.getConfigurationSection("removed");
+        if (root == null) {
+            return null;
+        }
+        String key = name.toLowerCase(Locale.ROOT);
+        return readRecord(root.getConfigurationSection(key), key);
+    }
+
     public void save(Iterable<DummyInstance> dummies) {
-        YamlConfiguration config = new YamlConfiguration();
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        config.set("dummies", null);
         ConfigurationSection root = config.createSection("dummies");
         for (DummyInstance dummy : dummies) {
             write(root.createSection(dummy.name().toLowerCase(Locale.ROOT)), dummy);
@@ -87,9 +63,78 @@ public final class DummyStorage {
         save(config);
     }
 
+    public void saveRemoved(DummyInstance dummy) {
+        if (!plugin.getConfig().getBoolean("storage.keep-removed-data", true)) {
+            deleteRemoved(dummy.name());
+            return;
+        }
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        ConfigurationSection root = config.getConfigurationSection("removed");
+        if (root == null) {
+            root = config.createSection("removed");
+        }
+        String key = dummy.name().toLowerCase(Locale.ROOT);
+        root.set(key, null);
+        write(root.createSection(key), dummy);
+        save(config);
+    }
+
+    public void deleteRemoved(String name) {
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        config.set("removed." + name.toLowerCase(Locale.ROOT), null);
+        save(config);
+    }
+
+    private DummyRecord readRecord(ConfigurationSection section, String key) {
+        if (section == null) {
+            return null;
+        }
+
+        String worldName = section.getString("world", "");
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            plugin.getLogger().warning("Skipping dummy '" + key + "': world '" + worldName + "' is not loaded");
+            return null;
+        }
+
+        UUID uuid = parseUuid(section.getString("uuid"), key);
+        UUID creatorUuid = parseNullableUuid(section.getString("creator.uuid"));
+        String creatorName = section.getString("creator.name", "console");
+        String name = section.getString("name", key);
+        Location location = new Location(
+                world,
+                section.getDouble("x"),
+                section.getDouble("y"),
+                section.getDouble("z"),
+                (float) section.getDouble("yaw"),
+                (float) section.getDouble("pitch")
+        );
+        ConfigurationSection settingsSection = section.getConfigurationSection("settings");
+        DummySettings settings = settingsSection == null
+                ? DummySettings.defaults(plugin.getConfig())
+                : DummySettings.fromConfig(settingsSection);
+        DummySkin skin = DummySkin.fromConfig(section.getConfigurationSection("skin"));
+        DummyExperience experience = DummyExperience.fromConfig(section.getConfigurationSection("experience"));
+        return new DummyRecord(
+                uuid,
+                creatorUuid,
+                creatorName,
+                name,
+                location,
+                settings,
+                skin,
+                readItems(section, "inventory.storage"),
+                readItems(section, "inventory.armor"),
+                section.getItemStack("inventory.offhand"),
+                experience
+        );
+    }
+
     private void write(ConfigurationSection section, DummyInstance dummy) {
         Location location = dummy.location();
         section.set("uuid", dummy.uuid().toString());
+        section.set("creator.uuid", dummy.creatorUuid() == null ? null : dummy.creatorUuid().toString());
+        section.set("creator.name", dummy.creatorName());
         section.set("name", dummy.name());
         section.set("world", location.getWorld().getName());
         section.set("x", location.getX());
@@ -150,5 +195,16 @@ public final class DummyStorage {
             }
         }
         return DummyManager.uuidForName(fallbackName);
+    }
+
+    private UUID parseNullableUuid(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 }

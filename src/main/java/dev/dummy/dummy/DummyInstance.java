@@ -9,13 +9,17 @@ import org.bukkit.inventory.PlayerInventory;
 
 public final class DummyInstance {
     private final UUID uuid;
+    private final UUID creatorUuid;
+    private final String creatorName;
     private final String name;
     private final DummyHandle handle;
     private DummySettings settings;
     private DummySkin skin;
 
-    public DummyInstance(UUID uuid, String name, DummySettings settings, DummySkin skin, DummyHandle handle) {
+    public DummyInstance(UUID uuid, UUID creatorUuid, String creatorName, String name, DummySettings settings, DummySkin skin, DummyHandle handle) {
         this.uuid = uuid;
+        this.creatorUuid = creatorUuid;
+        this.creatorName = creatorName;
         this.name = name;
         this.settings = settings;
         this.skin = skin;
@@ -24,6 +28,14 @@ public final class DummyInstance {
 
     public UUID uuid() {
         return uuid;
+    }
+
+    public UUID creatorUuid() {
+        return creatorUuid;
+    }
+
+    public String creatorName() {
+        return creatorName;
     }
 
     public String name() {

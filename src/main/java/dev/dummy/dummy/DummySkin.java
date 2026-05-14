@@ -1,5 +1,6 @@
 package dev.dummy.dummy;
 
+import dev.dummy.i18n.LocalizedException;
 import org.bukkit.configuration.ConfigurationSection;
 
 public record DummySkin(String type, String value, String signature) {
@@ -7,7 +8,7 @@ public record DummySkin(String type, String value, String signature) {
 
     public static DummySkin texture(String value, String signature) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Skin texture value cannot be blank");
+            throw new LocalizedException("error.skin-value-blank");
         }
         return new DummySkin("texture", value, signature == null ? "" : signature);
     }
