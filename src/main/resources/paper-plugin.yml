@@ -1,0 +1,47 @@
+name: Dummy
+version: ${version}
+main: dev.dummy.DummyPlugin
+description: High-version Paper fake player plugin.
+api-version: "1.21"
+authors:
+  - Dummy
+permissions:
+  dummy.command:
+    description: Allows using the base dummy command.
+    default: op
+  dummy.command.spawn:
+    description: Allows spawning dummy players.
+    default: op
+  dummy.command.remove:
+    description: Allows removing dummy players.
+    default: op
+  dummy.command.list:
+    description: Allows listing dummy players.
+    default: op
+  dummy.command.reload:
+    description: Allows reloading Dummy configuration.
+    default: op
+  dummy.command.config:
+    description: Allows changing dummy configuration.
+    default: op
+  dummy.command.skin:
+    description: Allows changing dummy skins.
+    default: op
+  dummy.command.exp:
+    description: Allows transferring dummy experience.
+    default: op
+  dummy.command.inv:
+    description: Allows opening dummy inventories.
+    default: op
+  dummy.command.tpto:
+    description: Allows teleporting to dummy players.
+    default: op
+  dummy.command.tphere:
+    description: Allows teleporting dummy players.
+    default: op
+  dummy.command.tps:
+    description: Allows swapping positions with dummy players.
+    default: op
+  dummy.command.actions:
+    description: Allows controlling dummy actions.
+    default: op

@@ -1,32 +1,27 @@
 plugins {
-    id("java")
+    java
+    id("io.papermc.paperweight.userdev") version "2.0.0-SNAPSHOT"
 }
 
-group = "github.com.railgun19457"
-version = "0.1.0"
+group = "dev.dummy"
+version = "0.1.0-SNAPSHOT"
 
-subprojects {
-    apply(plugin = "java")
-
-    group = rootProject.group
-    version = rootProject.version
-
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
-    }
-
-    tasks.withType<JavaCompile>().configureEach {
-        options.encoding = "UTF-8"
-        options.release.set(21)
-    }
-
-    tasks.withType<ProcessResources>().configureEach {
-        filteringCharset = "UTF-8"
-    }
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 }
 
-tasks.wrapper {
-    gradleVersion = "9.4.1"
+dependencies {
+    paperweight.paperDevBundle("1.21.11-R0.1-SNAPSHOT")
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
+    options.release.set(21)
+}
+
+tasks.processResources {
+    filteringCharset = "UTF-8"
+    filesMatching("paper-plugin.yml") {
+        expand("version" to project.version)
+    }
 }

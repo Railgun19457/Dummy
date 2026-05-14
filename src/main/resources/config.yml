@@ -1,0 +1,15 @@
+# Supported server versions for the first development target.
+supported-versions:
+  - "1.21.11"
+  - "26.1.2"
+
+defaults:
+  invulnerable: false
+  collision: true
+  ghost: false
+  chunk-loader: false
+  show-in-tab: true
+  name-format: "%name%"
+
+storage:
+  restore-on-startup: true
