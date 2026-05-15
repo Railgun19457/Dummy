@@ -6,10 +6,13 @@ import dev.dummy.dummy.DummyCreateRequest;
 import dev.dummy.i18n.LocalizedException;
 import dev.dummy.nms.DummyHandle;
 import dev.dummy.nms.FakePlayerAdapter;
+import dev.dummy.nms.paper.compat.PaperNmsCompatibility;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.protocol.game.GameProtocols;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
@@ -27,9 +30,11 @@ import org.bukkit.scheduler.BukkitTask;
 
 public final class PaperFakePlayerAdapter implements FakePlayerAdapter {
     private final DummyPlugin plugin;
+    private final PaperNmsCompatibility nmsCompatibility;
 
     public PaperFakePlayerAdapter(DummyPlugin plugin) {
         this.plugin = plugin;
+        this.nmsCompatibility = PaperNmsCompatibility.detect(plugin);
     }
 
     @Override
@@ -54,10 +59,15 @@ public final class PaperFakePlayerAdapter implements FakePlayerAdapter {
         CommonListenerCookie cookie = CommonListenerCookie.createInitial(((CraftPlayer) player).getProfile(), false);
         craftServer.getHandle().placeNewPlayer(connection, serverPlayer, cookie);
 
-        DummyServerGamePacketListener listener = new DummyServerGamePacketListener(server, connection, serverPlayer, cookie, plugin);
+        DummyServerGamePacketListener listener = new DummyServerGamePacketListener(server, connection, serverPlayer, cookie, plugin, nmsCompatibility);
+        connection.setupInboundProtocol(
+                GameProtocols.SERVERBOUND_TEMPLATE.bind(RegistryFriendlyByteBuf.decorator(server.registryAccess()), listener),
+                listener
+        );
         serverPlayer.connection = listener;
         player.teleport(location);
         resetSurvivalState(player);
+        listener.completeRespawn();
 
         DummyTicker ticker = new DummyTicker(serverPlayer);
         BukkitTask tickerTask = ticker.runTaskTimer(plugin, 0L, 1L);

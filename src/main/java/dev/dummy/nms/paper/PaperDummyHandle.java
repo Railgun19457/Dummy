@@ -13,11 +13,13 @@ import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
@@ -31,6 +33,7 @@ public final class PaperDummyHandle implements DummyHandle {
     private ServerPlayer handle;
     private final DummyTicker ticker;
     private final BukkitTask tickerTask;
+    private boolean removed;
 
     public PaperDummyHandle(ServerPlayer handle, DummyTicker ticker, BukkitTask tickerTask) {
         this.handle = handle;
@@ -105,24 +108,29 @@ public final class PaperDummyHandle implements DummyHandle {
 
     @Override
     public void hideEntity() {
-        var packet = new ClientboundRemoveEntitiesPacket(handle.getId());
-        for (Player online : Bukkit.getOnlinePlayers()) {
-            if (online instanceof CraftPlayer craftPlayer && !online.getUniqueId().equals(handle.getUUID())) {
-                craftPlayer.getHandle().connection.send(packet);
-            }
+        sendRemovePackets();
+        if (!handle.isRemoved()) {
+            handle.level().removePlayerImmediately(handle, Entity.RemovalReason.KILLED);
         }
     }
 
     @Override
     public void remove(Component reason) {
+        if (removed) {
+            return;
+        }
+        removed = true;
         tickerTask.cancel();
         Player player = player();
         removeCollisionRule(player);
+        sendRemovePackets();
+        closeConnection();
         if (player.isOnline()) {
-            player.kick(reason);
-            return;
+            ((CraftServer) Bukkit.getServer()).getHandle().remove(handle, reason);
         }
-        handle.discard();
+        if (!handle.isRemoved()) {
+            handle.discard();
+        }
     }
 
     private void applyCollisionRule(Player player, boolean collision) {
@@ -177,6 +185,23 @@ public final class PaperDummyHandle implements DummyHandle {
         Team team = scoreboard.getTeam(NO_COLLISION_TEAM);
         if (team != null) {
             team.removeEntry(player.getName());
+        }
+    }
+
+    private void sendRemovePackets() {
+        var removeEntity = new ClientboundRemoveEntitiesPacket(handle.getId());
+        var removeInfo = new ClientboundPlayerInfoRemovePacket(List.of(handle.getUUID()));
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online instanceof CraftPlayer craftPlayer && !online.getUniqueId().equals(handle.getUUID())) {
+                craftPlayer.getHandle().connection.send(removeEntity);
+                craftPlayer.getHandle().connection.send(removeInfo);
+            }
+        }
+    }
+
+    private void closeConnection() {
+        if (handle.connection instanceof DummyServerGamePacketListener dummyConnection) {
+            dummyConnection.closeDummyConnection();
         }
     }
 

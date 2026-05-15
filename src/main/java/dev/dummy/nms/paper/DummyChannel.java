@@ -20,6 +20,7 @@ public final class DummyChannel extends AbstractChannel {
     private final ChannelConfig config = new DefaultChannelConfig(this);
     private final ChannelPipeline pipeline = new DummyChannelPipeline(this);
     private final InetAddress address;
+    private boolean open = true;
 
     public DummyChannel(Channel parent, InetAddress address) {
         super(parent);
@@ -42,10 +43,12 @@ public final class DummyChannel extends AbstractChannel {
 
     @Override
     protected void doClose() {
+        open = false;
     }
 
     @Override
     protected void doDisconnect() {
+        open = false;
     }
 
     @Override
@@ -57,7 +60,7 @@ public final class DummyChannel extends AbstractChannel {
 
     @Override
     public boolean isActive() {
-        return true;
+        return open;
     }
 
     @Override
@@ -67,7 +70,7 @@ public final class DummyChannel extends AbstractChannel {
 
     @Override
     public boolean isOpen() {
-        return true;
+        return open;
     }
 
     @Override
