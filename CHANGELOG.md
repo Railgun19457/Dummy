@@ -1,5 +1,11 @@
 # 更新日志
 
+## 0.2.1 - 2026-05-15
+
+- 调整默认权限：普通命令默认所有玩家可用，`reload` 和 `remove all` 仍默认 OP。
+- 新增独立权限节点 `dummy.command.remove-all`，用于控制 `/dummy remove all`。
+- 将中英文 README 的支持版本、命令和权限说明改为表格形式。
+
 ## 0.2.0 - 2026-05-15
 
 - 兼容 Paper 26.1.2 的 `ClientboundSetEntityMotionPacket` record accessor。

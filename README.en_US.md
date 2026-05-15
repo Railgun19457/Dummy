@@ -20,10 +20,13 @@ Dummy is a fake player plugin for modern Paper servers. It creates real server-s
 - Includes `zh_CN` and `en_US` language files
 - Supports `/dummy` and `/dm` command aliases
 
-## Requirements
+## Support Matrix
 
-- Java 21+
-- Paper 1.21.11、26.1.2
+| Item | Supported Range |
+| --- | --- |
+| Java | 21+ |
+| Server | Paper |
+| Verified Paper versions | 1.21.11, 26.1.2 |
 
 ## Installation
 
@@ -38,23 +41,26 @@ Dummy is a fake player plugin for modern Paper servers. It creates real server-s
 
 ## Commands
 
-- `/dummy` Shows command help
-- `/dm` Alias of `/dummy`
-- `/dummy spawn <name>` Spawns a dummy at your current location
-- `/dummy remove <name|all>` Removes one dummy or all dummies
-- `/dummy list` Lists active dummies
-- `/dummy reload` Reloads config and language files
-- `/dummy config <name> <key> <value>` Updates dummy settings
-- `/dummy skin <name> player <playerName>` Uses the skin of a named player
-- `/dummy skin <name> texture <value> [signature]` Sets a texture value/signature skin
-- `/dummy skin <name> clear` Clears the dummy skin
-- `/dummy exp <name> <amount|all>` Transfers dummy experience to the command player
-- `/dummy inv <name>` Opens dummy inventory, armor, and offhand slots
-- `/dummy tpto <name>` Teleports you to a dummy
-- `/dummy tphere <name>` Teleports a dummy to your current location
-- `/dummy tps <name>` Swaps positions with a dummy
-- `/dummy revive <name>` Revives a dead dummy at your current location
-- `/dummy actions <name> <action> ...` Controls dummy actions
+| Command | Description | Permission |
+| --- | --- | --- |
+| `/dummy` | Shows command help | `dummy.command` |
+| `/dm` | Alias of `/dummy` | `dummy.command` |
+| `/dummy spawn <name>` | Spawns a dummy at your current location | `dummy.command.spawn` |
+| `/dummy remove <name>` | Removes one dummy | `dummy.command.remove` |
+| `/dummy remove all` | Removes all dummies | `dummy.command.remove-all` |
+| `/dummy list` | Lists active dummies | `dummy.command.list` |
+| `/dummy reload` | Reloads config and language files | `dummy.command.reload` |
+| `/dummy config <name> <key> <value>` | Updates dummy settings | `dummy.command.config` |
+| `/dummy skin <name> player <playerName>` | Uses the skin of a named player | `dummy.command.skin` |
+| `/dummy skin <name> texture <value> [signature]` | Sets a texture value/signature skin | `dummy.command.skin` |
+| `/dummy skin <name> clear` | Clears the dummy skin | `dummy.command.skin` |
+| `/dummy exp <name> <amount|all>` | Transfers dummy experience to the command player | `dummy.command.exp` |
+| `/dummy inv <name>` | Opens dummy inventory, armor, and offhand slots | `dummy.command.inv` |
+| `/dummy tpto <name>` | Teleports you to a dummy | `dummy.command.tpto` |
+| `/dummy tphere <name>` | Teleports a dummy to your current location | `dummy.command.tphere` |
+| `/dummy tps <name>` | Swaps positions with a dummy | `dummy.command.tps` |
+| `/dummy revive <name>` | Revives a dead dummy at your current location | `dummy.command.revive` |
+| `/dummy actions <name> <action> ...` | Controls dummy actions | `dummy.command.actions` |
 
 ## Actions
 
@@ -100,20 +106,23 @@ Action mode notes:
 
 ## Permissions
 
-- `dummy.command`: Allows using the base command, OP by default
-- `dummy.command.spawn`: Allows spawning dummies, OP by default
-- `dummy.command.remove`: Allows removing dummies, OP by default
-- `dummy.command.list`: Allows listing dummies, OP by default
-- `dummy.command.reload`: Allows reloading config, OP by default
-- `dummy.command.config`: Allows changing dummy settings, OP by default
-- `dummy.command.skin`: Allows changing dummy skins, OP by default
-- `dummy.command.exp`: Allows transferring dummy experience, OP by default
-- `dummy.command.inv`: Allows opening dummy inventories, OP by default
-- `dummy.command.tpto`: Allows teleporting to dummies, OP by default
-- `dummy.command.tphere`: Allows teleporting dummies to you, OP by default
-- `dummy.command.tps`: Allows swapping positions, OP by default
-- `dummy.command.revive`: Allows reviving dummies, OP by default
-- `dummy.command.actions`: Allows controlling dummy actions, OP by default
+| Permission | Description | Default |
+| --- | --- | --- |
+| `dummy.command` | Allows using the base command | All players |
+| `dummy.command.spawn` | Allows spawning dummies | All players |
+| `dummy.command.remove` | Allows removing one dummy | All players |
+| `dummy.command.remove-all` | Allows removing all dummies | OP |
+| `dummy.command.list` | Allows listing dummies | All players |
+| `dummy.command.reload` | Allows reloading config | OP |
+| `dummy.command.config` | Allows changing dummy settings | All players |
+| `dummy.command.skin` | Allows changing dummy skins | All players |
+| `dummy.command.exp` | Allows transferring dummy experience | All players |
+| `dummy.command.inv` | Allows opening dummy inventories | All players |
+| `dummy.command.tpto` | Allows teleporting to dummies | All players |
+| `dummy.command.tphere` | Allows teleporting dummies to you | All players |
+| `dummy.command.tps` | Allows swapping positions | All players |
+| `dummy.command.revive` | Allows reviving dummies | All players |
+| `dummy.command.actions` | Allows controlling dummy actions | All players |
 
 ## Configuration Overview
 

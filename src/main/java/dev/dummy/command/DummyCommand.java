@@ -92,13 +92,13 @@ public final class DummyCommand implements BasicCommand {
             return SUBCOMMANDS;
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("remove")) {
-            return removeSuggestions("");
+            return removeSuggestions(source.getSender(), "");
         }
         if (args.length == 1) {
             return filter(SUBCOMMANDS, args[0]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
-            return removeSuggestions(args[1]);
+            return removeSuggestions(source.getSender(), args[1]);
         }
         if (args.length == 2 && needsDummyName(args[0])) {
             return filter(dummyManager.names(), args[1]);
@@ -156,6 +156,7 @@ public final class DummyCommand implements BasicCommand {
         }
         String reason = i18n.tr("command.remove-reason", sender.getName());
         if (args[1].equalsIgnoreCase("all")) {
+            requirePermission(sender, "dummy.command.remove-all");
             int removed = dummyManager.removeAll(reason);
             message(sender, "command.remove-all-success", NamedTextColor.GREEN, removed);
             return;
@@ -336,9 +337,11 @@ public final class DummyCommand implements BasicCommand {
                 .toList();
     }
 
-    private List<String> removeSuggestions(String prefix) {
+    private List<String> removeSuggestions(CommandSender sender, String prefix) {
         List<String> names = new ArrayList<>(dummyManager.names());
-        names.add("all");
+        if (sender.hasPermission("dummy.command.remove-all")) {
+            names.add("all");
+        }
         return filter(names, prefix);
     }
 
