@@ -1,53 +1,5 @@
-# Gradle
-.gradle/
+AGENTS.md
 build/
-out/
 bin/
-
-# Java
-*.class
-*.jar
-*.war
-*.ear
-hs_err_pid*
-replay_pid*
-
-# Paperweight / development server output
-run/
-runs/
-server/
-servers/
-logs/
-crash-reports/
-plugins/
-world/
-world_nether/
-world_the_end/
-eula.txt
-banned-ips.json
-banned-players.json
-ops.json
-usercache.json
-whitelist.json
-
-# IDE
-.idea/
-*.iml
-.vscode/
-.classpath
-.project
-.settings/
-
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Local environment
-.env
-.env.*
-!.env.example
-
-# Generated plugin data
-dummies.yml
-skins.yml
+.gradle/
+dev/
