@@ -10,13 +10,9 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
-import net.minecraft.server.level.ClientInformation;
-import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.player.ChatVisiblity;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
@@ -28,12 +24,12 @@ import org.bukkit.scheduler.BukkitTask;
 
 public final class PaperDummyHandle implements DummyHandle {
     private static final String NO_COLLISION_TEAM = "dummy_no_collision";
-    private static final int ALL_SKIN_PARTS = 0x01 | 0x02 | 0x04 | 0x08 | 0x10 | 0x20 | 0x40;
 
     private ServerPlayer handle;
     private final DummyTicker ticker;
     private final BukkitTask tickerTask;
     private boolean removed;
+    private boolean listed = true;
 
     public PaperDummyHandle(ServerPlayer handle, DummyTicker ticker, BukkitTask tickerTask) {
         this.handle = handle;
@@ -65,8 +61,7 @@ public final class PaperDummyHandle implements DummyHandle {
         player.playerListName(displayName);
         player.customName(displayName);
         player.setCustomNameVisible(true);
-        applyClientOptions(settings.showInTab());
-        setListed(settings.showInTab());
+        listed = settings.showInTab();
     }
 
     @Override
@@ -166,20 +161,6 @@ public final class PaperDummyHandle implements DummyHandle {
         player.setSleepingIgnored(true);
     }
 
-    private void applyClientOptions(boolean listed) {
-        handle.updateOptionsNoEvents(new ClientInformation(
-                "en_us",
-                Bukkit.getViewDistance(),
-                ChatVisiblity.SYSTEM,
-                false,
-                ALL_SKIN_PARTS,
-                HumanoidArm.RIGHT,
-                false,
-                listed,
-                ParticleStatus.MINIMAL
-        ));
-    }
-
     private void removeCollisionRule(Player player) {
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         Team team = scoreboard.getTeam(NO_COLLISION_TEAM);
@@ -205,20 +186,11 @@ public final class PaperDummyHandle implements DummyHandle {
         }
     }
 
-    private void setListed(boolean listed) {
-        var packet = ClientboundPlayerInfoUpdatePacket.updateListed(handle.getUUID(), listed);
-        for (Player online : Bukkit.getOnlinePlayers()) {
-            if (online instanceof CraftPlayer craftPlayer && !online.getUniqueId().equals(handle.getUUID())) {
-                craftPlayer.getHandle().connection.send(packet);
-            }
-        }
-    }
-
     private void refreshPlayerInfo() {
         var remove = new ClientboundPlayerInfoRemovePacket(List.of(handle.getUUID()));
-        var add = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(handle, true);
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online instanceof CraftPlayer craftPlayer && !online.getUniqueId().equals(handle.getUUID())) {
+                var add = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(handle, listed && online.isListed(player()));
                 craftPlayer.getHandle().connection.send(remove);
                 craftPlayer.getHandle().connection.send(add);
             }

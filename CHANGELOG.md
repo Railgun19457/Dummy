@@ -1,5 +1,12 @@
 # 更新日志
 
+## 0.2.2 - 2026-05-18
+
+- 修复玩家重新进入服务器后，已关闭 Tab 显示的假人仍出现在 Tab 列表的问题。
+- Tab 显隐改为使用 Paper `listPlayer` / `unlistPlayer` API，减少手动 NMS PlayerInfo 包带来的状态不一致。
+- 修复假人刷新皮肤时可能重新强制显示在 Tab 列表的问题。
+- 接入 ProxyTab 通用虚拟玩家协议 `proxytab:virtual_players`，让启用 Tab 显示的假人可由代理端统一格式化、排序和分组。
+
 ## 0.2.1 - 2026-05-15
 
 - 调整默认权限：普通命令默认所有玩家可用，`reload` 和 `remove all` 仍默认 OP。

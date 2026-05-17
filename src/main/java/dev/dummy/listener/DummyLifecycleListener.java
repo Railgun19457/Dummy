@@ -7,6 +7,7 @@ import dev.dummy.dummy.DummyManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public final class DummyLifecycleListener implements Listener {
@@ -29,6 +30,16 @@ public final class DummyLifecycleListener implements Listener {
             }
             plugin.getServer().getScheduler().runTask(plugin, () -> dummyManager.handleDeath(event.getPlayer()));
         }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (event.getPlayer().isOnline() && !dummyManager.isDummy(event.getPlayer())) {
+                dummyManager.applyTabVisibility(event.getPlayer());
+                dummyManager.syncProxyTab();
+            }
+        }, 1L);
     }
 
     @EventHandler

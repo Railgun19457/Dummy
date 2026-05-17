@@ -4,6 +4,9 @@ import dev.dummy.DummyPlugin;
 import dev.dummy.i18n.LocalizedException;
 import dev.dummy.nms.DummyHandle;
 import dev.dummy.nms.FakePlayerAdapter;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +31,10 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitTask;
 
 public final class DummyManager {
+    public static final String PROXY_TAB_CHANNEL = "proxytab:virtual_players";
+
     private static final Pattern NAME_PATTERN = Pattern.compile("[A-Za-z0-9_]{3,16}");
+    private static final int PROXY_TAB_PROTOCOL_VERSION = 1;
 
     private final DummyPlugin plugin;
     private final FakePlayerAdapter adapter;
@@ -100,6 +106,7 @@ public final class DummyManager {
         dropInventoryIfConfigured(dummy);
         storage.saveRemoved(dummy);
         dummiesByUuid.remove(dummy.uuid());
+        sendProxyTabRemove(dummy);
         dummy.handle().remove(Component.text("[Dummy] " + reason));
         save();
         return true;
@@ -107,14 +114,15 @@ public final class DummyManager {
 
     public int removeAll(String reason) {
         List<DummyInstance> snapshot = new ArrayList<>(dummiesByName.values());
-        dummiesByName.clear();
-        dummiesByUuid.clear();
         for (DummyInstance dummy : snapshot) {
             releaseChunkTicket(dummy);
             dropInventoryIfConfigured(dummy);
             storage.saveRemoved(dummy);
+            sendProxyTabRemove(dummy);
             dummy.handle().remove(Component.text("[Dummy] " + reason));
         }
+        dummiesByName.clear();
+        dummiesByUuid.clear();
         save();
         return snapshot.size();
     }
@@ -129,6 +137,7 @@ public final class DummyManager {
         save();
         for (DummyInstance dummy : snapshot) {
             releaseChunkTicket(dummy);
+            sendProxyTabRemove(dummy);
             dummy.handle().remove(Component.text("[Dummy] " + reason));
         }
         dummiesByName.clear();
@@ -143,6 +152,7 @@ public final class DummyManager {
         }
         releaseChunkTicket(dummy);
         dropInventoryIfConfigured(dummy);
+        sendProxyTabRemove(dummy);
         dummiesByName.remove(normalize(dummy.name()));
         if (!shuttingDown) {
             save();
@@ -195,6 +205,19 @@ public final class DummyManager {
         return dummiesByUuid.containsKey(player.getUniqueId());
     }
 
+    public void applyTabVisibility(Player viewer) {
+        for (DummyInstance dummy : dummiesByName.values()) {
+            applyTabVisibility(viewer, dummy);
+        }
+    }
+
+    public void syncProxyTab() {
+        sendProxyTabReset();
+        for (DummyInstance dummy : dummiesByName.values()) {
+            sendProxyTabUpdate(dummy);
+        }
+    }
+
     public void save() {
         storage.save(dummiesByName.values());
     }
@@ -205,6 +228,8 @@ public final class DummyManager {
         dummy.settings(settings);
         dummy.handle().applySettings(dummy.name(), settings);
         updateChunkTicket(dummy);
+        refreshTabVisibility(dummy);
+        sendProxyTabUpdate(dummy);
         save();
         return settings;
     }
@@ -213,6 +238,8 @@ public final class DummyManager {
         DummyInstance dummy = require(name);
         dummy.skin(skin);
         dummy.handle().applySkin(skin);
+        refreshTabVisibility(dummy);
+        sendProxyTabUpdate(dummy);
         save();
     }
 
@@ -237,6 +264,7 @@ public final class DummyManager {
         releaseChunkTicket(dummy);
         dummiesByName.remove(normalize(dummy.name()));
         dummiesByUuid.remove(dummy.uuid());
+        sendProxyTabRemove(dummy);
         dummy.handle().remove(Component.text("[Dummy] revived"));
 
         Bukkit.getScheduler().runTask(plugin, () -> restoreRevived(record));
@@ -313,6 +341,8 @@ public final class DummyManager {
         dummiesByName.put(normalize(name), dummy);
         dummiesByUuid.put(uuid, dummy);
         updateChunkTicket(dummy);
+        refreshTabVisibility(dummy);
+        sendProxyTabUpdate(dummy);
         if (runCommands) {
             runConfiguredCommands("commands.after-spawn", uuid, creatorUuid, creatorName, name, location);
         }
@@ -323,6 +353,86 @@ public final class DummyManager {
             save();
         }
         return dummy;
+    }
+
+    private void refreshTabVisibility(DummyInstance dummy) {
+        for (Player viewer : Bukkit.getOnlinePlayers()) {
+            applyTabVisibility(viewer, dummy);
+        }
+    }
+
+    private void applyTabVisibility(Player viewer, DummyInstance dummy) {
+        if (viewer.getUniqueId().equals(dummy.uuid()) || isDummy(viewer)) {
+            return;
+        }
+        if (dummy.settings().showInTab()) {
+            viewer.listPlayer(dummy.player());
+            return;
+        }
+        viewer.unlistPlayer(dummy.player());
+    }
+
+    private void sendProxyTabUpdate(DummyInstance dummy) {
+        if (!dummy.settings().showInTab()) {
+            sendProxyTabHide(dummy);
+            return;
+        }
+        sendProxyTabMessage(dummy.uuid(), output -> {
+            output.writeUTF("update");
+            output.writeLong(dummy.uuid().getMostSignificantBits());
+            output.writeLong(dummy.uuid().getLeastSignificantBits());
+            output.writeUTF(dummy.name());
+            DummySkin skin = dummy.skin();
+            output.writeUTF(skin.value());
+            output.writeUTF(skin.signature());
+            output.writeInt(Math.max(0, dummy.player().getPing()));
+            output.writeInt(dummy.player().getGameMode().getValue());
+        });
+    }
+
+    private void sendProxyTabHide(DummyInstance dummy) {
+        sendProxyTabMessage(dummy.uuid(), output -> {
+            output.writeUTF("hide");
+            output.writeLong(dummy.uuid().getMostSignificantBits());
+            output.writeLong(dummy.uuid().getLeastSignificantBits());
+        });
+    }
+
+    private void sendProxyTabRemove(DummyInstance dummy) {
+        sendProxyTabMessage(dummy.uuid(), output -> {
+            output.writeUTF("remove");
+            output.writeLong(dummy.uuid().getMostSignificantBits());
+            output.writeLong(dummy.uuid().getLeastSignificantBits());
+        });
+    }
+
+    private void sendProxyTabReset() {
+        sendProxyTabMessage(null, output -> output.writeUTF("reset"));
+    }
+
+    private void sendProxyTabMessage(UUID excludedPlayer, ProxyTabPayload payload) {
+        Player carrier = proxyTabCarrier(excludedPlayer);
+        if (carrier == null) {
+            return;
+        }
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (DataOutputStream output = new DataOutputStream(bytes)) {
+            output.writeByte(PROXY_TAB_PROTOCOL_VERSION);
+            payload.write(output);
+        } catch (IOException ex) {
+            plugin.getLogger().warning("Failed to encode ProxyTab virtual-player payload: " + ex.getMessage());
+            return;
+        }
+        carrier.sendPluginMessage(plugin, PROXY_TAB_CHANNEL, bytes.toByteArray());
+    }
+
+    private Player proxyTabCarrier(UUID excludedPlayer) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if ((excludedPlayer == null || !player.getUniqueId().equals(excludedPlayer)) && !isDummy(player)) {
+                return player;
+            }
+        }
+        return null;
     }
 
     private void updateChunkTicket(DummyInstance dummy) {
@@ -553,6 +663,11 @@ public final class DummyManager {
 
     public static UUID uuidForName(String name) {
         return UUID.nameUUIDFromBytes(("dummy:" + name.toLowerCase(Locale.ROOT)).getBytes(StandardCharsets.UTF_8));
+    }
+
+    @FunctionalInterface
+    private interface ProxyTabPayload {
+        void write(DataOutputStream output) throws IOException;
     }
 
     private record LoadedChunkTickets(World world, int centerX, int centerZ, int radius, Set<ChunkTicket> tickets) {

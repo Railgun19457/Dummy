@@ -22,6 +22,7 @@ public final class DummyPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        getServer().getMessenger().registerOutgoingPluginChannel(this, DummyManager.PROXY_TAB_CHANNEL);
         this.i18n = new I18n(this);
         this.i18n.saveDefaults();
         this.i18n.reload();
