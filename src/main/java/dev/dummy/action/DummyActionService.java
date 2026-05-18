@@ -49,28 +49,32 @@ public final class DummyActionService {
         }
 
         stop(dummy, normalized);
+        UUID uuid = dummy.uuid();
         int interval = Math.max(1, intervalTicks);
         int[] elapsed = {0};
         BukkitTask task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
-            if (!dummyManager.isDummy(dummy.player())) {
-                stop(dummy, normalized);
+            DummyInstance current = dummyManager.get(uuid);
+            if (current == null || isInactive(current)) {
+                if (!preserveOnLifecycle()) {
+                    stopTask(uuid, normalized, current);
+                }
                 return;
             }
             try {
-                perform(dummy, normalized, args);
+                perform(current, normalized, args);
             } catch (LocalizedException ex) {
-                plugin.getLogger().fine("Skipped dummy action '" + normalized + "' for " + dummy.name() + ": " + ex.key());
+                plugin.getLogger().fine("Skipped dummy action '" + normalized + "' for " + current.name() + ": " + ex.key());
             } catch (RuntimeException ex) {
-                plugin.getLogger().warning("Stopped dummy action '" + normalized + "' for " + dummy.name() + ": " + ex.getMessage());
-                stop(dummy, normalized);
+                plugin.getLogger().warning("Stopped dummy action '" + normalized + "' for " + current.name() + ": " + ex.getMessage());
+                stopTask(uuid, normalized, current);
                 return;
             }
             elapsed[0] += interval;
             if (durationTicks > 0 && elapsed[0] >= durationTicks) {
-                stop(dummy, normalized);
+                stopTask(uuid, normalized, current);
             }
         }, 0L, interval);
-        tasks.computeIfAbsent(dummy.uuid(), ignored -> new LinkedHashMap<>()).put(normalized, task);
+        tasks.computeIfAbsent(uuid, ignored -> new LinkedHashMap<>()).put(normalized, task);
     }
 
     public int stop(DummyInstance dummy, String action) {
@@ -82,6 +86,7 @@ public final class DummyActionService {
                 dummyTasks.values().forEach(BukkitTask::cancel);
                 dummyTasks.clear();
             }
+            tasks.remove(dummy.uuid());
             resetAll(dummy);
             return size;
         }
@@ -91,7 +96,14 @@ public final class DummyActionService {
         if (task != null) {
             task.cancel();
         }
+        if (dummyTasks != null && dummyTasks.isEmpty()) {
+            tasks.remove(dummy.uuid());
+        }
         return resetAction(dummy, normalized) || task != null ? 1 : 0;
+    }
+
+    public boolean preserveOnLifecycle() {
+        return plugin.getConfig().getBoolean("actions.preserve-on-lifecycle", true);
     }
 
     public static String[] tail(String[] args, int from) {
@@ -313,6 +325,27 @@ public final class DummyActionService {
         }
         dummyManager.save();
         return true;
+    }
+
+    private void stopTask(UUID uuid, String action, DummyInstance dummy) {
+        Map<String, BukkitTask> dummyTasks = tasks.get(uuid);
+        BukkitTask task = dummyTasks == null ? null : dummyTasks.remove(action);
+        if (task != null) {
+            task.cancel();
+        }
+        if (dummyTasks != null && dummyTasks.isEmpty()) {
+            tasks.remove(uuid);
+        }
+        if (dummy != null) {
+            resetAction(dummy, action);
+        } else if (action.equals("mine")) {
+            mineStates.remove(uuid);
+        }
+    }
+
+    private boolean isInactive(DummyInstance dummy) {
+        Player player = dummy.player();
+        return dummy.dead() || player.isDead() || !player.isValid();
     }
 
     private boolean destroyBlock(Player player, Block block) {

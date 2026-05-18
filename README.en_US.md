@@ -103,6 +103,7 @@ Action mode notes:
 - `once` runs the action once.
 - `repeat <intervalTicks> [durationTicks]` repeats the action at a tick interval, with an optional duration.
 - Some actions also support suffix syntax: `<action> <args...> repeat <intervalTicks> [durationTicks]`.
+- Repeated actions pause by default when a dummy dies, is removed, or quits, and continue when the same UUID dummy is revived or appears again. Disable this with `actions.preserve-on-lifecycle`.
 
 ## Permissions
 
@@ -135,7 +136,7 @@ Main `config.yml` sections:
 - `inventory`: Whether inventory, armor, and offhand items drop when a dummy is removed or the plugin shuts down
 - `commands`: Console commands executed before and after dummy creation
 - `death`: Automatic remove or revive behavior after dummy death
-- `actions`: Action system settings, such as mount search range
+- `actions`: Action system settings, such as preserving lifecycle actions and mount search range
 
 Per-dummy settings configurable by command:
 

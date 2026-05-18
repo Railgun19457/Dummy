@@ -47,6 +47,9 @@ death:
   auto-revive-delay-ticks: 20
 
 actions:
+  # If true, repeated actions are paused instead of stopped when a dummy dies,
+  # quits, or is removed, and resume when the same UUID dummy appears again.
+  preserve-on-lifecycle: true
   mount:
     # Search radius for nearby mountable living entities.
     range: 4

@@ -25,7 +25,7 @@ public final class DummyLifecycleListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event) {
         if (dummyManager.isDummy(event.getPlayer())) {
             DummyInstance dummy = dummyManager.get(event.getPlayer().getUniqueId());
-            if (dummy != null) {
+            if (dummy != null && !actionService.preserveOnLifecycle()) {
                 actionService.stop(dummy, null);
             }
             plugin.getServer().getScheduler().runTask(plugin, () -> dummyManager.handleDeath(event.getPlayer()));
@@ -46,7 +46,7 @@ public final class DummyLifecycleListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (dummyManager.isDummy(event.getPlayer())) {
             DummyInstance dummy = dummyManager.get(event.getPlayer().getUniqueId());
-            if (dummy != null) {
+            if (dummy != null && !actionService.preserveOnLifecycle()) {
                 actionService.stop(dummy, null);
             }
             dummyManager.cleanup(event.getPlayer());
