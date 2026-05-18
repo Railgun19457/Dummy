@@ -39,7 +39,7 @@ public final class DummyGuiListener implements Listener {
         event.setCancelled(true);
         DummyInstance dummy = dummyManager.get(target.getUniqueId());
         if (dummy != null) {
-            openMenu(event.getPlayer(), dummy);
+            openConfigMenu(event.getPlayer(), dummy);
         }
     }
 
@@ -143,10 +143,10 @@ public final class DummyGuiListener implements Listener {
 
     private void toggle(Player viewer, DummyInstance dummy, String key, boolean currentValue) {
         dummyManager.updateSettings(dummy.name(), key, Boolean.toString(!currentValue));
-        openMenu(viewer, dummyManager.require(dummy.name()));
+        openConfigMenu(viewer, dummyManager.require(dummy.name()));
     }
 
-    private void openMenu(Player viewer, DummyInstance dummy) {
+    public void openConfigMenu(Player viewer, DummyInstance dummy) {
         DummyMenuHolder holder = new DummyMenuHolder(dummy.name());
         Inventory inventory = Bukkit.createInventory(holder, 27, i18n.tr("gui.title", dummy.name()));
         holder.inventory(inventory);

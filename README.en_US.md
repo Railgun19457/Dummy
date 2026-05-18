@@ -50,7 +50,7 @@ Dummy is a fake player plugin for modern Paper servers. It creates real server-s
 | `/dummy remove all` | Removes all dummies | `dummy.command.remove-all` |
 | `/dummy list` | Lists active dummies | `dummy.command.list` |
 | `/dummy reload` | Reloads config and language files | `dummy.command.reload` |
-| `/dummy config <name> <key> <value>` | Updates dummy settings | `dummy.command.config` |
+| `/dummy config <name> [key] [value]` | Opens the config GUI or updates dummy settings | `dummy.command.config` |
 | `/dummy skin <name> player <playerName>` | Uses the skin of a named player | `dummy.command.skin` |
 | `/dummy skin <name> texture <value> [signature]` | Sets a texture value/signature skin | `dummy.command.skin` |
 | `/dummy skin <name> clear` | Clears the dummy skin | `dummy.command.skin` |

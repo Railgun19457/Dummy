@@ -194,6 +194,11 @@ public final class DummyCommand implements BasicCommand {
 
     private void config(CommandSender sender, String[] args) {
         requirePermission(sender, "dummy.command.config");
+        if (args.length == 2) {
+            Player player = requirePlayer(sender);
+            guiListener.openConfigMenu(player, dummyManager.require(args[1]));
+            return;
+        }
         if (args.length < 4) {
             message(sender, "usage.config", NamedTextColor.YELLOW);
             return;

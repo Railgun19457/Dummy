@@ -37,7 +37,7 @@ usage:
   root: "用法：/dummy <spawn|remove|list|reload|config|skin|exp|inv|tpto|tphere|tps|revive|actions>"
   spawn: "用法：/dummy spawn <name>"
   remove: "用法：/dummy remove <name|all>"
-  config: "用法：/dummy config <name> <key> <value>"
+  config: "用法：/dummy config <name> [key] [value]"
   skin: "用法：/dummy skin <name> <player|texture|clear> ..."
   skin-texture: "用法：/dummy skin <name> texture <value> [signature]"
   skin-player: "用法：/dummy skin <name> player <playerName>"
