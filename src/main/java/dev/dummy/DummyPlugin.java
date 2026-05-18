@@ -6,6 +6,7 @@ import dev.dummy.dummy.DummyManager;
 import dev.dummy.dummy.DummyStorage;
 import dev.dummy.gui.DummyGuiListener;
 import dev.dummy.i18n.I18n;
+import dev.dummy.listener.DummyExperienceListener;
 import dev.dummy.listener.DummyLifecycleListener;
 import dev.dummy.nms.FakePlayerAdapter;
 import dev.dummy.nms.paper.PaperFakePlayerAdapter;
@@ -42,6 +43,7 @@ public final class DummyPlugin extends JavaPlugin {
         DummyGuiListener guiListener = new DummyGuiListener(this, dummyManager, i18n);
         DummyCommand dummyCommand = new DummyCommand(this, dummyManager, skinService, actionService, i18n, guiListener);
         registerCommand("dummy", "Manage dummy players.", List.of("dm"), dummyCommand);
+        Bukkit.getPluginManager().registerEvents(new DummyExperienceListener(this, dummyManager), this);
         Bukkit.getPluginManager().registerEvents(new DummyLifecycleListener(this, dummyManager, actionService), this);
         Bukkit.getPluginManager().registerEvents(guiListener, this);
 
