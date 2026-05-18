@@ -25,6 +25,8 @@ error:
   no-target-block: "No target block in range."
   block-unbreakable: "The target block cannot be mined by this dummy."
   mine-failed: "Mining failed; an event or protection plugin may have blocked the break."
+  no-placeable-block: "The dummy is not holding a placeable block in its main hand."
+  place-failed: "Placement failed; the target may not be placeable or an event/protection plugin blocked it."
   no-mountable-entity: "No mountable entity in range."
   action-requires-arguments: "Action requires additional arguments."
   repeat-requires-interval: "repeat requires an interval in ticks."

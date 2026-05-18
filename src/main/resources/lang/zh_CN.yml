@@ -25,6 +25,8 @@ error:
   no-target-block: "范围内没有目标方块。"
   block-unbreakable: "目标方块无法被当前假人挖掘。"
   mine-failed: "挖掘失败，目标方块可能被事件或保护插件拦截。"
+  no-placeable-block: "假人主手没有可放置方块。"
+  place-failed: "放置失败，目标位置可能不可放置或被事件/保护插件拦截。"
   no-mountable-entity: "范围内没有可骑乘实体。"
   action-requires-arguments: "该动作需要额外参数。"
   repeat-requires-interval: "repeat 需要间隔 tick 参数。"

@@ -27,9 +27,9 @@ public final class DummyCommand implements BasicCommand {
     );
     private static final List<String> CONFIG_KEYS = List.of("invulnerable", "collision", "ghost", "chunk-loader", "show-in-tab", "name-format");
     private static final List<String> ACTIONS = List.of(
-            "attack", "chat", "command", "drop", "hold", "jump", "look", "lookat", "mine", "mount", "move", "sneak", "sprint", "swap", "use", "stop"
+            "attack", "chat", "command", "drop", "hold", "jump", "look", "lookat", "mine", "mount", "move", "place", "sneak", "sprint", "swap", "use", "stop"
     );
-    private static final List<String> MODE_ACTIONS = List.of("attack", "drop", "jump", "look", "mine", "move", "use");
+    private static final List<String> MODE_ACTIONS = List.of("attack", "drop", "jump", "look", "mine", "move", "place", "use");
     private static final List<String> TOGGLE_ACTIONS = List.of("sneak", "sprint");
     private static final List<String> LOOK_ARGS = List.of("north", "east", "south", "west", "entity");
     private static final List<String> TOGGLE_ARGS = List.of("toggle", "on", "off");

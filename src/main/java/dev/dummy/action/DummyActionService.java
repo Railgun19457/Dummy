@@ -10,10 +10,18 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -127,6 +135,7 @@ public final class DummyActionService {
             case "mine" -> mine(player);
             case "mount" -> mount(player);
             case "move" -> move(player, args);
+            case "place" -> place(player);
             case "sneak" -> player.setSneaking(parseToggle(args, player.isSneaking()));
             case "sprint" -> player.setSprinting(parseToggle(args, player.isSprinting()));
             case "swap" -> swapHands(player);
@@ -251,6 +260,23 @@ public final class DummyActionService {
         player.setVelocity(direction.normalize().multiply(speed).setY(player.getVelocity().getY()));
     }
 
+    private void place(Player player) {
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (held.isEmpty() || !held.getType().isBlock()) {
+            throw new LocalizedException("error.no-placeable-block");
+        }
+        Block target = player.getTargetBlockExact(5, FluidCollisionMode.NEVER);
+        BlockFace face = player.getTargetBlockFace(5, FluidCollisionMode.NEVER);
+        if (target == null || face == null) {
+            throw new LocalizedException("error.no-target-block");
+        }
+        if (!placeBlock(player, target, face)) {
+            throw new LocalizedException("error.place-failed");
+        }
+        player.swingMainHand();
+        dummyManager.save();
+    }
+
     private void swapHands(Player player) {
         ItemStack main = player.getInventory().getItemInMainHand();
         ItemStack offhand = player.getInventory().getItemInOffHand();
@@ -353,6 +379,28 @@ public final class DummyActionService {
             return craftPlayer.getHandle().gameMode.destroyBlock(new BlockPos(block.getX(), block.getY(), block.getZ()));
         }
         return player.breakBlock(block);
+    }
+
+    private boolean placeBlock(Player player, Block target, BlockFace face) {
+        if (!(player instanceof CraftPlayer craftPlayer)) {
+            return false;
+        }
+        ServerPlayer serverPlayer = craftPlayer.getHandle();
+        InteractionHand hand = InteractionHand.MAIN_HAND;
+        net.minecraft.world.item.ItemStack stack = serverPlayer.getItemInHand(hand);
+        Direction direction = CraftBlock.blockFaceToNotch(face);
+        BlockHitResult hit = new BlockHitResult(
+                new Vec3(
+                        target.getX() + 0.5D + face.getModX() * 0.5D,
+                        target.getY() + 0.5D + face.getModY() * 0.5D,
+                        target.getZ() + 0.5D + face.getModZ() * 0.5D
+                ),
+                direction,
+                new BlockPos(target.getX(), target.getY(), target.getZ()),
+                false
+        );
+        InteractionResult result = serverPlayer.gameMode.useItemOn(serverPlayer, serverPlayer.level(), stack, hand, hit);
+        return result.consumesAction();
     }
 
     private int parseBlockCoordinate(String raw, int base) {

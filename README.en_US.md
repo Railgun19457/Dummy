@@ -78,6 +78,7 @@ Available actions:
 - `mine` Mines the looked-at block
 - `mount` Mounts or dismounts a nearby mountable entity
 - `move [speed]` Moves toward the current look direction
+- `place` Places the main-hand block against the looked-at block
 - `sneak [toggle|on|off]` Toggles or sets sneaking
 - `sprint [toggle|on|off]` Toggles or sets sprinting
 - `swap` Swaps main-hand and offhand items
