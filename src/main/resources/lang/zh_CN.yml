@@ -66,6 +66,7 @@ command:
   tphere-success: "已将 {0} 传送到你的位置。"
   tps-success: "已与 {0} 交换位置。"
   revive-success: "已复活假人 {0}。"
+  revive-not-needed: "假人 {0} 当前不需要复活。"
   actions-stopped: "已停止 {0} 个动作。"
   actions-started: "已为 {1} 启动动作 {0}。"
 

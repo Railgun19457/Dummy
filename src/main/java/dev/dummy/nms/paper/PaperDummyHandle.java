@@ -103,7 +103,7 @@ public final class PaperDummyHandle implements DummyHandle {
 
     @Override
     public void hideEntity() {
-        sendRemovePackets();
+        sendRemoveEntityPacket();
         if (!handle.isRemoved()) {
             handle.level().removePlayerImmediately(handle, Entity.RemovalReason.KILLED);
         }
@@ -170,12 +170,20 @@ public final class PaperDummyHandle implements DummyHandle {
     }
 
     private void sendRemovePackets() {
-        var removeEntity = new ClientboundRemoveEntitiesPacket(handle.getId());
         var removeInfo = new ClientboundPlayerInfoRemovePacket(List.of(handle.getUUID()));
+        sendRemoveEntityPacket();
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online instanceof CraftPlayer craftPlayer && !online.getUniqueId().equals(handle.getUUID())) {
+                craftPlayer.getHandle().connection.send(removeInfo);
+            }
+        }
+    }
+
+    private void sendRemoveEntityPacket() {
+        var removeEntity = new ClientboundRemoveEntitiesPacket(handle.getId());
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online instanceof CraftPlayer craftPlayer && !online.getUniqueId().equals(handle.getUUID())) {
                 craftPlayer.getHandle().connection.send(removeEntity);
-                craftPlayer.getHandle().connection.send(removeInfo);
             }
         }
     }

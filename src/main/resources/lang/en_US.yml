@@ -66,6 +66,7 @@ command:
   tphere-success: "Teleported {0} to you."
   tps-success: "Swapped positions with {0}."
   revive-success: "Revived dummy {0}."
+  revive-not-needed: "Dummy {0} does not need revival."
   actions-stopped: "Stopped {0} action(s)."
   actions-started: "Started action {0} for {1}."
 

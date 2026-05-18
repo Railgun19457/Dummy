@@ -100,6 +100,12 @@ public final class DummyCommand implements BasicCommand {
         if (args.length == 2 && args[0].equalsIgnoreCase("remove")) {
             return removeSuggestions(source.getSender(), args[1]);
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("revive")) {
+            return filter(dummyManager.revivableNames(), args[1]);
+        }
+        if (args.length == 2 && needsActiveDummyName(args[0])) {
+            return filter(dummyManager.activeNames(), args[1]);
+        }
         if (args.length == 2 && needsDummyName(args[0])) {
             return filter(dummyManager.names(), args[1]);
         }
@@ -297,8 +303,11 @@ public final class DummyCommand implements BasicCommand {
             message(sender, "usage.revive", NamedTextColor.YELLOW);
             return;
         }
-        dummyManager.revive(args[1], player.getLocation());
-        message(sender, "command.revive-success", NamedTextColor.GREEN, args[1]);
+        if (dummyManager.revive(args[1], player.getLocation())) {
+            message(sender, "command.revive-success", NamedTextColor.GREEN, args[1]);
+            return;
+        }
+        message(sender, "command.revive-not-needed", NamedTextColor.YELLOW, args[1]);
     }
 
     private void actions(CommandSender sender, String[] args) {
@@ -347,6 +356,10 @@ public final class DummyCommand implements BasicCommand {
 
     private boolean needsDummyName(String subcommand) {
         return List.of("remove", "config", "skin", "exp", "inv", "tpto", "tphere", "tps", "revive", "actions").contains(subcommand.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean needsActiveDummyName(String subcommand) {
+        return List.of("config", "skin", "exp", "inv", "tpto", "tphere", "tps", "actions").contains(subcommand.toLowerCase(Locale.ROOT));
     }
 
     private List<String> actionSuggestions(String[] args) {
