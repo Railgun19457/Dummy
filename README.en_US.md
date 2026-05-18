@@ -12,7 +12,7 @@ Dummy is a fake player plugin for modern Paper servers. It creates real server-s
 - Supports spawn, remove, list, reload, revive, and teleport management
 - Opens a GUI by right-clicking a dummy, with inventory, armor, and offhand management
 - Supports per-dummy settings: invulnerable, collision, ghost mode, chunk loader, Tab visibility, and name format
-- Uses the creator skin by default, supports fetching skins by player name, and supports manual texture value/signature skins
+- Uses the creator skin by default and supports fetching skins by premium player name
 - Caches fetched skins to reduce repeated Mojang API requests
 - Persists dummy inventory, armor, offhand, experience, skin, settings, and location
 - Can keep removed dummy data and restore it when the same name is spawned again
@@ -51,8 +51,7 @@ Dummy is a fake player plugin for modern Paper servers. It creates real server-s
 | `/dummy list` | Lists active dummies | `dummy.command.list` |
 | `/dummy reload` | Reloads config and language files | `dummy.command.reload` |
 | `/dummy config <name> [key] [value]` | Opens the config GUI or updates dummy settings | `dummy.command.config` |
-| `/dummy skin <name> player <playerName>` | Uses the skin of a named player | `dummy.command.skin` |
-| `/dummy skin <name> texture <value> [signature]` | Sets a texture value/signature skin | `dummy.command.skin` |
+| `/dummy skin <name> set <playerName>` | Uses the skin of a premium player name | `dummy.command.skin` |
 | `/dummy skin <name> clear` | Clears the dummy skin | `dummy.command.skin` |
 | `/dummy exp <name> <amount|all>` | Transfers dummy experience to the command player | `dummy.command.exp` |
 | `/dummy inv <name>` | Opens dummy inventory, armor, and offhand slots | `dummy.command.inv` |

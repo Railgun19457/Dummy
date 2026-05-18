@@ -116,13 +116,10 @@ public final class DummyCommand implements BasicCommand {
             return filter(List.of("true", "false"), args[3]);
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("skin")) {
-            return filter(List.of("player", "texture", "clear"), args[2]);
+            return filter(List.of("set", "clear"), args[2]);
         }
-        if (args.length == 4 && args[0].equalsIgnoreCase("skin") && args[2].equalsIgnoreCase("player")) {
+        if (args.length == 4 && args[0].equalsIgnoreCase("skin") && args[2].equalsIgnoreCase("set")) {
             return filter(plugin.getServer().getOnlinePlayers().stream().map(Player::getName).toList(), args[3]);
-        }
-        if (args.length == 4 && args[0].equalsIgnoreCase("skin") && args[2].equalsIgnoreCase("texture")) {
-            return filter(List.of("<value>"), args[3]);
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("exp")) {
             return filter(List.of("all"), args[2]);
@@ -217,19 +214,15 @@ public final class DummyCommand implements BasicCommand {
         dummyManager.require(args[1]);
         switch (args[2].toLowerCase(Locale.ROOT)) {
             case "clear" -> {
+                if (args.length != 3) {
+                    throw new LocalizedException("usage.skin");
+                }
                 dummyManager.setSkin(args[1], DummySkin.NONE);
                 message(sender, "command.skin-cleared", NamedTextColor.GREEN, args[1]);
             }
-            case "texture" -> {
-                if (args.length < 4) {
-                    throw new LocalizedException("usage.skin-texture");
-                }
-                dummyManager.setSkin(args[1], DummySkin.texture(args[3], args.length >= 5 ? args[4] : ""));
-                message(sender, "command.skin-texture-updated", NamedTextColor.GREEN, args[1]);
-            }
-            case "player" -> {
-                if (args.length < 4) {
-                    throw new LocalizedException("usage.skin-player");
+            case "set" -> {
+                if (args.length != 4) {
+                    throw new LocalizedException("usage.skin-set");
                 }
                 message(sender, "command.skin-fetching", NamedTextColor.GRAY, args[3]);
                 skinService.fetchPlayerSkin(args[3]).whenComplete((skin, throwable) -> plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -238,7 +231,7 @@ public final class DummyCommand implements BasicCommand {
                         return;
                     }
                     dummyManager.setSkin(args[1], skin);
-                    message(sender, "command.skin-player-updated", NamedTextColor.GREEN, args[1], args[3]);
+                    message(sender, "command.skin-set-updated", NamedTextColor.GREEN, args[1], args[3]);
                 }));
             }
             default -> throw new LocalizedException("error.unknown-skin-mode", args[2]);
