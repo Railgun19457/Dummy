@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -154,14 +155,21 @@ public final class DummyCommand implements BasicCommand {
 
     private void spawn(CommandSender sender, String[] args) {
         requirePermission(sender, "dummy.command.spawn");
-        if (!(sender instanceof Player player)) {
-            throw new LocalizedException("error.player-only-current-location");
-        }
         if (args.length != 2) {
             message(sender, "usage.spawn", NamedTextColor.YELLOW);
             return;
         }
-        DummyInstance dummy = dummyManager.spawn(sender, args[1], player.getLocation(), skinService.skinFromPlayer(player));
+        Location location;
+        DummySkin skin;
+        if (sender instanceof Player player) {
+            location = player.getLocation();
+            skin = skinService.skinFromPlayer(player);
+        } else {
+            // 控制台没有所在位置，默认在主世界出生点召唤，便于不登录客户端时测试
+            location = dummyManager.defaultSpawnLocation();
+            skin = DummySkin.NONE;
+        }
+        DummyInstance dummy = dummyManager.spawn(sender, args[1], location, skin);
         message(sender, "command.spawn-success", NamedTextColor.GREEN, dummy.name());
     }
 

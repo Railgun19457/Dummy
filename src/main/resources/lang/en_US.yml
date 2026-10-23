@@ -3,7 +3,6 @@ error:
   no-permission: "You do not have permission: {0}"
   not-dummy-owner: "You can only manage dummies you spawned: {0}"
   player-only: "Only players can use this command."
-  player-only-current-location: "Only players can spawn a dummy at the current location for now."
   dummy-not-found: "Dummy not found: {0}"
   dummy-exists: "Dummy '{0}' already exists."
   server-limit-reached: "The server dummy limit has been reached: {0}"

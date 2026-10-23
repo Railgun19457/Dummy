@@ -2,6 +2,10 @@
 
 ## 未发布
 
+### 新增
+
+- `/dummy spawn <name>` 支持控制台执行：控制台没有所在位置，会在主世界（首个加载的世界）出生点召唤假人，便于不登录客户端时测试。玩家执行时行为不变；`error.player-only-current-location` 消息随之移除。
+
 ### 变更
 
 - 区块加载改用假人自身的 per-player 视距实现：删除逐区块 `addPluginChunkTicket`（每个假人最多 441 个票据）与每 20 tick 的票据刷新任务，改为 `setSimulationDistance` / `setViewDistance` / `setSendViewDistance` 一次设置，由服务端玩家区块加载器随假人移动自动跟随。

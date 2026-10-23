@@ -201,6 +201,17 @@ public final class DummyManager {
         return spawn(sender, uuidForName(name), creatorUuid(sender), creatorName(sender), name, location, DummySettings.defaults(plugin.getConfig()), skin, true, true);
     }
 
+    /**
+     * 控制台召唤时使用的默认位置：主世界（首个加载的世界）的出生点。
+     */
+    public Location defaultSpawnLocation() {
+        List<World> worlds = Bukkit.getWorlds();
+        if (worlds.isEmpty()) {
+            throw new LocalizedException("error.spawn-no-world");
+        }
+        return worlds.get(0).getSpawnLocation();
+    }
+
     public void restoreSavedDummies() {
         for (DummyRecord record : storage.load()) {
             if (contains(record.name())) {

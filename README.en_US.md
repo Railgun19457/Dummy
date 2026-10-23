@@ -45,7 +45,7 @@ Dummy is a fake player plugin for modern Paper servers. It creates real server-s
 | --- | --- | --- |
 | `/dummy` | Shows command help | `dummy.command` |
 | `/dm` | Alias of `/dummy` | `dummy.command` |
-| `/dummy spawn <name>` | Spawns a dummy at your current location | `dummy.command.spawn` |
+| `/dummy spawn <name>` | Spawns a dummy at your current location; from the console it spawns at the main world spawn point | `dummy.command.spawn` |
 | `/dummy remove <name>` | Removes one dummy | `dummy.command.remove` |
 | `/dummy remove all` | Removes all manageable dummies | `dummy.command.remove` |
 | `/dummy delete <name>` | Removes a dummy and deletes its saved data | `dummy.command.delete` |

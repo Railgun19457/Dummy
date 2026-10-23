@@ -45,7 +45,7 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 | --- | --- | --- |
 | `/dummy` | 显示插件帮助信息 | `dummy.command` |
 | `/dm` | `/dummy` 的别名 | `dummy.command` |
-| `/dummy spawn <name>` | 在当前位置召唤假人 | `dummy.command.spawn` |
+| `/dummy spawn <name>` | 在当前位置召唤假人；控制台执行时在主世界出生点召唤 | `dummy.command.spawn` |
 | `/dummy remove <name>` | 移除指定假人 | `dummy.command.remove` |
 | `/dummy remove all` | 移除自己可管理的全部假人 | `dummy.command.remove` |
 | `/dummy delete <name>` | 移除假人并删除保存数据 | `dummy.command.delete` |
