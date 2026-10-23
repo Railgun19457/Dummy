@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -25,7 +24,6 @@ import java.util.regex.Pattern;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -48,9 +46,6 @@ public final class DummyManager {
     private DummyActionService actionService;
     private final Map<String, DummyInstance> dummiesByName = new LinkedHashMap<>();
     private final Map<UUID, DummyInstance> dummiesByUuid = new LinkedHashMap<>();
-    private final Map<UUID, LoadedChunkTickets> chunkTickets = new LinkedHashMap<>();
-    private final Map<ChunkTicket, Integer> chunkTicketRefs = new LinkedHashMap<>();
-    private final BukkitTask chunkTicketRefreshTask;
     private final Set<String> dirtyDummies = ConcurrentHashMap.newKeySet();
     private final ReentrantLock flushLock = new ReentrantLock();
     private BukkitTask autoSaveTask;
@@ -60,7 +55,6 @@ public final class DummyManager {
         this.plugin = plugin;
         this.adapter = adapter;
         this.storage = storage;
-        this.chunkTicketRefreshTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::refreshChunkTickets, 20L, 20L);
         int interval = plugin.getConfig().getInt("storage.auto-save-interval-ticks", 600);
         if (interval > 0) {
             this.autoSaveTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::flushIfDirty, interval, interval);
@@ -299,7 +293,6 @@ public final class DummyManager {
 
     public void shutdown(String reason) {
         shuttingDown = true;
-        chunkTicketRefreshTask.cancel();
         if (autoSaveTask != null) {
             autoSaveTask.cancel();
         }
@@ -310,7 +303,6 @@ public final class DummyManager {
         }
         flushNow();
         for (DummyInstance dummy : snapshot) {
-            releaseChunkTicket(dummy);
             try {
                 sendProxyTabRemove(dummy);
             } catch (RuntimeException ex) {
@@ -329,7 +321,6 @@ public final class DummyManager {
         if (dummy == null) {
             return;
         }
-        releaseChunkTicket(dummy);
         dropInventoryIfConfigured(dummy);
         sendProxyTabRemove(dummy);
         dummiesByName.remove(normalize(dummy.name()));
@@ -453,7 +444,6 @@ public final class DummyManager {
         DummySettings settings = dummy.settings().with(key, value);
         dummy.settings(settings);
         dummy.handle().applySettings(dummy.name(), settings);
-        updateChunkTicket(dummy);
         if (key.equals("show-in-tab") || key.equals("name-format")) {
             updateTabVisibility(dummy);
         }
@@ -473,7 +463,6 @@ public final class DummyManager {
     public void teleportDummy(String name, Location location) {
         DummyInstance dummy = require(name);
         dummy.handle().teleport(location);
-        updateChunkTicket(dummy);
         markDirty(name);
     }
 
@@ -488,7 +477,6 @@ public final class DummyManager {
         Location dummyLocation = dummy.location();
         player.teleport(dummyLocation);
         dummy.handle().teleport(playerLocation);
-        updateChunkTicket(dummy);
         markDirty(name);
     }
 
@@ -522,7 +510,6 @@ public final class DummyManager {
     }
 
     private void removeDummy(DummyInstance dummy, String reason, boolean save, boolean keepData) {
-        releaseChunkTicket(dummy);
         dropInventoryIfConfigured(dummy);
         if (keepData) {
             storage.markRemoved(dummy);
@@ -569,7 +556,6 @@ public final class DummyManager {
         DummyInstance dummy = new DummyInstance(uuid, creatorUuid, creatorName, name, settings, skin, handle);
         dummiesByName.put(normalize(name), dummy);
         dummiesByUuid.put(uuid, dummy);
-        updateChunkTicket(dummy);
         refreshTabVisibility(dummy);
         sendProxyTabUpdate(dummy);
         if (runCommands) {
@@ -670,77 +656,6 @@ public final class DummyManager {
         return null;
     }
 
-    private void updateChunkTicket(DummyInstance dummy) {
-        if (!dummy.settings().chunkLoader()) {
-            releaseChunkTicket(dummy);
-            return;
-        }
-        Location location = dummy.location();
-        World world = location.getWorld();
-        if (world == null) {
-            releaseChunkTicket(dummy);
-            return;
-        }
-
-        int centerX = location.getBlockX() >> 4;
-        int centerZ = location.getBlockZ() >> 4;
-        int radius = dummy.settings().effectiveChunkRadius();
-        LoadedChunkTickets current = chunkTickets.get(dummy.uuid());
-        if (current != null && current.matches(world, centerX, centerZ, radius)) {
-            return;
-        }
-
-        releaseChunkTicket(dummy);
-        Set<ChunkTicket> tickets = chunkTickets(world, centerX, centerZ, radius);
-        for (ChunkTicket ticket : tickets) {
-            addChunkTicket(ticket);
-        }
-        chunkTickets.put(dummy.uuid(), new LoadedChunkTickets(world, centerX, centerZ, radius, tickets));
-    }
-
-    private void releaseChunkTicket(DummyInstance dummy) {
-        LoadedChunkTickets loaded = chunkTickets.remove(dummy.uuid());
-        if (loaded != null) {
-            for (ChunkTicket ticket : loaded.tickets()) {
-                removeChunkTicket(ticket);
-            }
-        }
-    }
-
-    private void refreshChunkTickets() {
-        for (DummyInstance dummy : new ArrayList<>(dummiesByName.values())) {
-            updateChunkTicket(dummy);
-        }
-    }
-
-    private Set<ChunkTicket> chunkTickets(World world, int centerX, int centerZ, int radius) {
-        Set<ChunkTicket> tickets = new LinkedHashSet<>();
-        for (int x = centerX - radius; x <= centerX + radius; x++) {
-            for (int z = centerZ - radius; z <= centerZ + radius; z++) {
-                tickets.add(new ChunkTicket(world, x, z));
-            }
-        }
-        return tickets;
-    }
-
-    private void addChunkTicket(ChunkTicket ticket) {
-        int count = chunkTicketRefs.getOrDefault(ticket, 0);
-        if (count == 0) {
-            ticket.world().addPluginChunkTicket(ticket.x(), ticket.z(), plugin);
-        }
-        chunkTicketRefs.put(ticket, count + 1);
-    }
-
-    private void removeChunkTicket(ChunkTicket ticket) {
-        int count = chunkTicketRefs.getOrDefault(ticket, 0);
-        if (count <= 1) {
-            chunkTicketRefs.remove(ticket);
-            ticket.world().removePluginChunkTicket(ticket.x(), ticket.z(), plugin);
-            return;
-        }
-        chunkTicketRefs.put(ticket, count - 1);
-    }
-
     private void validateName(String name) {
         if (!NAME_PATTERN.matcher(name).matches()) {
             throw new LocalizedException("error.invalid-name");
@@ -748,7 +663,6 @@ public final class DummyManager {
     }
 
     private void removeDeadDummy(DummyInstance dummy, boolean saveRemoved) {
-        releaseChunkTicket(dummy);
         dummiesByName.remove(normalize(dummy.name()));
         dummiesByUuid.remove(dummy.uuid());
         if (saveRemoved) {
@@ -791,7 +705,6 @@ public final class DummyManager {
             );
             resummoned.applyRecord(record);
             resummoned.handle().applySettings(resummoned.name(), resummoned.settings());
-            updateChunkTicket(resummoned);
             restoreVehicleAndActions(resummoned, record);
             markDirty(record.name());
         } catch (RuntimeException ex) {
@@ -943,14 +856,5 @@ public final class DummyManager {
     @FunctionalInterface
     private interface ProxyTabPayload {
         void write(DataOutputStream output) throws IOException;
-    }
-
-    private record LoadedChunkTickets(World world, int centerX, int centerZ, int radius, Set<ChunkTicket> tickets) {
-        private boolean matches(World world, int centerX, int centerZ, int radius) {
-            return this.world.equals(world) && this.centerX == centerX && this.centerZ == centerZ && this.radius == radius;
-        }
-    }
-
-    private record ChunkTicket(World world, int x, int z) {
     }
 }

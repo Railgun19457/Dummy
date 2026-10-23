@@ -2,6 +2,7 @@ package dev.dummy.nms.paper;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
+import dev.dummy.DummyPlugin;
 import dev.dummy.dummy.DummySettings;
 import dev.dummy.dummy.DummySkin;
 import dev.dummy.nms.DummyHandle;
@@ -30,13 +31,19 @@ import org.bukkit.scheduler.BukkitTask;
 public final class PaperDummyHandle implements DummyHandle {
     private static final String NO_COLLISION_TEAM = "dummy_no_collision";
     private static final String TEXTURES_PROPERTY = "textures";
+    /** Paper API 的视距下限，加载半径小于该值时仍按该值设置。 */
+    private static final int MIN_API_VIEW_DISTANCE = 2;
+    /** 假人不接收任何有效数据包，把发包距离压到最小以减少区块包构造。 */
+    private static final int SEND_VIEW_DISTANCE = 2;
 
+    private final DummyPlugin plugin;
     private final ServerPlayer handle;
     private final BukkitTask tickerTask;
     private boolean removed;
     private boolean listed = true;
 
-    public PaperDummyHandle(ServerPlayer handle, BukkitTask tickerTask) {
+    public PaperDummyHandle(DummyPlugin plugin, ServerPlayer handle, BukkitTask tickerTask) {
+        this.plugin = plugin;
         this.handle = handle;
         this.tickerTask = tickerTask;
     }
@@ -61,11 +68,31 @@ public final class PaperDummyHandle implements DummyHandle {
         player.setGravity(settings.physics());
         player.setNoPhysics(!settings.physics());
         player.setInvisible(false);
+        applyChunkLoading(settings);
         player.displayName(displayName);
         player.playerListName(displayName);
         player.customName(displayName);
         player.setCustomNameVisible(true);
         listed = settings.showInTab();
+    }
+
+    /**
+     * 用 per-player 视距替代插件区块票据：假人本身是真实玩家，服务端的玩家区块加载器
+     * （Paper/moonrise 的 {@code RegionizedPlayerChunkLoader}）会按其 tick 视距自动加载并
+     * tick 周围区块，且随假人移动自动跟随，无需插件逐区块挂票据或周期刷新。
+     *
+     * <p>{@code chunk-loader} 关闭时视距按 0 处理，只保留假人自身所在区块。</p>
+     */
+    private void applyChunkLoading(DummySettings settings) {
+        int radius = settings.effectiveChunkRadius();
+        try {
+            player().setSimulationDistance(radius);
+            player().setViewDistance(Math.max(MIN_API_VIEW_DISTANCE, radius));
+            player().setSendViewDistance(SEND_VIEW_DISTANCE);
+        } catch (RuntimeException ex) {
+            // 视距 API 不可用时保持服务端默认视距，功能不退化到需要逐区块票据
+            plugin.getLogger().warning("Failed to apply chunk view distances for dummy '" + player().getName() + "': " + ex.getMessage());
+        }
     }
 
     @Override

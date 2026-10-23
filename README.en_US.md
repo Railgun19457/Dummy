@@ -11,12 +11,12 @@ Dummy is a fake player plugin for modern Paper servers. It creates real server-s
 - Creates real `ServerPlayer` dummy players using Paper + NMS
 - Supports spawn, remove, list, reload, and teleport management
 - Opens a GUI by right-clicking a dummy, with inventory, armor, and offhand management
-- Supports per-dummy settings: invulnerable, collision, ghost mode, chunk loader, Tab visibility, and name format
+- Supports per-dummy settings: invulnerable, collision, physics, spawning, chunk loader, chunk radius, Tab visibility, and name format
 - Uses the creator skin by default and supports fetching skins by premium player name
 - Caches fetched skins to reduce repeated Mojang API requests
 - Persists dummy inventory, armor, offhand, experience, skin, settings, and location
 - Can keep removed dummy data and restore it when the same name is spawned again
-- Loads chunks around a dummy using the world's `simulation-distance` for redstone and entity ticking
+- Loads chunks around a dummy using the dummy's own view distance (configurable radius `0`-`32`) for redstone and entity ticking; when disabled only the dummy's own chunk is kept
 - Includes `zh_CN` and `en_US` language files
 - Supports `/dummy` and `/dm` command aliases
 
@@ -160,6 +160,22 @@ Per-dummy settings configurable by command (defaults apply to newly created dumm
 Command usage: `/dummy config <name> <key> [value]`, where `chunk-radius` accepts `0`-`32` and every other setting accepts `true`/`false`. In the GUI, "Chunk Radius" cycles through `0`-`32` with left click `+1` and right click `-1`.
 
 Settings are independent: when `chunk-loader` is disabled, `chunk-radius` has no effect (it behaves like `0`, keeping only the dummy's own chunk).
+
+### Chunk loading semantics
+
+A dummy is a real server-side `ServerPlayer`, so the server's player chunk loader already loads and ticks chunks around it based on its own view distance. Dummy no longer registers per-chunk plugin tickets; it sets the dummy's own view distances instead:
+
+| Setting | Effect |
+| --- | --- |
+| `chunk-loader: true` + `chunk-radius: n` | Tick radius = `n` chunks (square); load radius = `max(n, 2) + 1` |
+| `chunk-loader: false` | Treated as `n = 0`: only the dummy's own chunk is ticked |
+| Send distance | Fixed at 2: the dummy never receives usable packets, so keeping it minimal avoids building chunk packets |
+
+Keep in mind:
+
+- With `chunk-radius: 0` only the dummy's own chunk is ticked and **no** random ticks happen (crops, fire spread, ice/snow); use a radius of at least 1 if you need them.
+- Disabling `chunk-loader` does not make a dummy "load no chunks at all" — a dummy must live in a loaded chunk, so that chunk and the minimal load range stay loaded.
+- The radius only affects that single dummy; it never changes the world's `simulation-distance` or the view distance of real players.
 
 Command placeholders for `commands.before-spawn` and `commands.after-spawn`:
 

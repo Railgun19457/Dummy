@@ -4,6 +4,8 @@
 
 ### 变更
 
+- 区块加载改用假人自身的 per-player 视距实现：删除逐区块 `addPluginChunkTicket`（每个假人最多 441 个票据）与每 20 tick 的票据刷新任务，改为 `setSimulationDistance` / `setViewDistance` / `setSendViewDistance` 一次设置，由服务端玩家区块加载器随假人移动自动跟随。
+- 发包距离固定为 2，减少假人侧区块包的构造开销；`chunk-loader` 关闭时视距按 `0` 处理，只保留假人所在区块。
 - 假人配置重新整理为 6 个独立开关 + 2 个界面项：`invulnerable`（无敌）、`collision`（碰撞）、`physics`（物理）、`spawning`（刷怪）、`chunk-loader`（区块加载）、`chunk-radius`（加载半径）、`show-in-tab`、`name-format`。
 - 移除 `ghost`（幽灵模式）：原语义拆为 `invulnerable` + `collision` + `physics` + `chunk-loader` 四个显式开关组合。升级时 `dummies.db` 会自动把 `ghost = 1` 的行展开为这四项，并新增 `physics`、`spawning`、`chunk_radius` 三列，无需手动迁移。
 - 新增 `spawning` 配置项并默认关闭：假人不再因为自身存在而让周围区块刷怪。
