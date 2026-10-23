@@ -171,14 +171,15 @@ public final class DummyGuiListener implements Listener {
     }
 
     /**
-     * 左键 +1、右键 -1，在 0..32 之间循环。
+     * 左键 +1、右键 -1，在 0 到该世界上限之间循环。
      */
     private void cycleChunkRadius(Player viewer, DummyInstance dummy, boolean forward) {
         if (!ensureCanManage(viewer, dummy)) {
             return;
         }
-        int span = DummySettings.MAX_CHUNK_RADIUS - DummySettings.MIN_CHUNK_RADIUS + 1;
-        int current = dummy.settings().chunkRadius();
+        int max = dummyManager.maxChunkRadius(dummy.location().getWorld());
+        int span = max - DummySettings.MIN_CHUNK_RADIUS + 1;
+        int current = Math.min(dummy.settings().chunkRadius(), max);
         int offset = (current - DummySettings.MIN_CHUNK_RADIUS + (forward ? 1 : span - 1)) % span;
         int next = DummySettings.MIN_CHUNK_RADIUS + offset;
         dummyManager.updateSettings(dummy.name(), "chunk-radius", Integer.toString(next));
@@ -199,7 +200,7 @@ public final class DummyGuiListener implements Listener {
         inventory.setItem(13, toggleItem("gui.physics", settings.physics()));
         inventory.setItem(14, toggleItem("gui.spawning", settings.spawning()));
         inventory.setItem(15, toggleItem("gui.chunk-loader", settings.chunkLoader()));
-        inventory.setItem(16, radiusItem(settings));
+        inventory.setItem(16, radiusItem(settings, dummyManager.maxChunkRadius(dummy.location().getWorld())));
         inventory.setItem(22, toggleItem("gui.show-in-tab", settings.showInTab()));
         viewer.openInventory(inventory);
     }
@@ -229,21 +230,36 @@ public final class DummyGuiListener implements Listener {
         );
     }
 
-    private ItemStack radiusItem(DummySettings settings) {
-        boolean active = settings.chunkLoader();
+    /**
+     * 显示实际覆盖的区块范围（边长 = 2 * 半径 + 1），而不是只显示半径数值。
+     */
+    private ItemStack radiusItem(DummySettings settings, int maxRadius) {
+        if (!settings.chunkLoader()) {
+            return item(
+                    Material.COMPASS,
+                    i18n.tr("gui.chunk-range-disabled"),
+                    i18n.tr("gui.chunk-range-disabled-lore", maxRadius)
+            );
+        }
+        int span = settings.chunkSpan(settings.chunkRadius());
         return item(
                 Material.COMPASS,
-                i18n.tr("gui.chunk-radius", settings.chunkRadius()),
-                active ? i18n.tr("gui.chunk-radius-lore") : i18n.tr("gui.chunk-radius-disabled-lore")
+                i18n.tr("gui.chunk-range", span, span),
+                i18n.tr("gui.chunk-range-lore", maxRadius),
+                i18n.tr("gui.chunk-range-hint")
         );
     }
 
-    private ItemStack item(Material material, String name, String lore) {
+    private ItemStack item(Material material, String name, String... lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text(name));
-        if (!lore.isBlank()) {
-            meta.lore(java.util.List.of(Component.text(lore)));
+        java.util.List<Component> lines = java.util.Arrays.stream(lore)
+                .filter(line -> !line.isBlank())
+                .map(line -> (Component) Component.text(line))
+                .toList();
+        if (!lines.isEmpty()) {
+            meta.lore(lines);
         }
         item.setItemMeta(meta);
         return item;

@@ -84,7 +84,10 @@ public final class PaperDummyHandle implements DummyHandle {
      * <p>{@code chunk-loader} 关闭时视距按 0 处理，只保留假人自身所在区块。</p>
      */
     private void applyChunkLoading(DummySettings settings) {
-        int radius = settings.effectiveChunkRadius();
+        int radius = Math.min(
+                settings.effectiveChunkRadius(),
+                DummySettings.maxRadius(plugin.getConfig(), player().getWorld())
+        );
         try {
             player().setSimulationDistance(radius);
             player().setViewDistance(Math.max(MIN_API_VIEW_DISTANCE, radius));

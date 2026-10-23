@@ -28,6 +28,9 @@ limits:
   server-total: -1
   # Maximum number of active dummies created by each player. Console is not limited by this value.
   per-player: -1
+  # Upper bound for a dummy's chunk radius (0-32). Use -1 to follow each world's
+  # simulation-distance, which is also the server's own chunk loading radius.
+  max-chunk-radius: -1
 
 storage:
   # Restore active dummies from storage when the plugin starts.

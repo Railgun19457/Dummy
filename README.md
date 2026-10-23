@@ -137,7 +137,7 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 
 - `language`：语言文件，内置 `zh_CN`、`en_US`
 - `defaults`：新建假人的默认配置
-- `limits`：全服假人数量上限和单玩家假人数量上限，`-1` 表示无限制
+- `limits`：全服假人数量上限、单玩家假人数量上限和假人加载半径上限，`-1` 表示无限制（加载半径上限的 `-1` 表示跟随世界 `simulation-distance`）
 - `storage`：启动恢复和移除后保留数据
 - `inventory`：假人移除或插件关闭时是否掉落背包、装备和副手物品
 - `commands`：假人创建前后由控制台执行的命令
@@ -153,11 +153,13 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 | `physics` | `true` | 是否启用地心引力与方块碰撞；关闭后假人不会下落，可以穿墙 |
 | `spawning` | `false` | 是否作为刷怪上下文玩家；关闭后假人周围不会因为它的存在而刷怪 |
 | `chunk-loader` | `true` | 是否按 `chunk-radius` 加载并 tick 假人周围区块 |
-| `chunk-radius` | `0` | 加载半径（区块，`0`-`32`）；`0` 只加载假人所在区块，半径 ≥1 才有随机刻（作物、火焰蔓延） |
+| `chunk-radius` | `0` | 加载半径（区块，`0`-`32`）；实际覆盖范围为 `(2r+1)×(2r+1)` 区块，例如 `4` 覆盖 `9×9`。`0` 只加载假人所在区块，半径 ≥1 才有随机刻（作物、火焰蔓延）。上限由 `limits.max-chunk-radius` 决定 |
 | `show-in-tab` | `false` | 是否显示在 Tab 列表 |
 | `name-format` | `%name%` | 假人显示名格式，支持 `%name%` |
 
-命令用法：`/dummy config <name> <key> [value]`；`chunk-radius` 取值 `0`-`32`，其余为 `true`/`false`。GUI 中「加载半径」左键 +1、右键 -1，在 `0`-`32` 之间循环。
+命令用法：`/dummy config <name> <key> [value]`；`chunk-radius` 取值 `0`-上限，其余为 `true`/`false`。GUI 中「加载范围」左键 +1、右键 -1，在 `0`-上限之间循环，显示的是区块范围（如 `9×9 区块`）。
+
+`limits.max-chunk-radius`：假人加载半径上限，默认 `-1` 表示跟随各世界的 `simulation-distance`（即服务器自身的区块加载半径）；填具体数值则固定上限，但仍会被收敛到 API 硬上限 `32`。超出上限时命令会直接拒绝并提示当前上限，而不是静默收敛。
 
 配置项之间相互独立：关闭 `chunk-loader` 时 `chunk-radius` 不生效（等价于 `0`，即只保留假人所在区块）。
 
@@ -176,7 +178,7 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 
 | 设置 | 效果 |
 | --- | --- |
-| `chunk-loader: true` + `chunk-radius: n` | tick 半径 = `n` 个区块（方形）；加载半径 = `n` 或 API 最小值 2 取大者再 +1 |
+| `chunk-loader: true` + `chunk-radius: n` | tick 范围 = 以假人所在区块为中心、边长 `(2n+1)` 的正方形（`n=4` 时 `9×9`）；加载范围再向外扩 1 圈（API 视距下限为 2） |
 | `chunk-loader: false` | 按 `n = 0` 处理：只 tick 假人所在区块 |
 | 发包距离 | 固定为 2：假人不接收有效数据包，压到最小可省下区块包的构造开销 |
 

@@ -62,6 +62,20 @@ public final class DummyManager {
     }
 
     /**
+     * 指定世界允许的加载半径上限，见 {@link DummySettings#maxRadius}。
+     */
+    public int maxChunkRadius(World world) {
+        return DummySettings.maxRadius(plugin.getConfig(), world);
+    }
+
+    /**
+     * 按上限收敛半径，供命令与 GUI 使用。
+     */
+    public int clampChunkRadius(World world, int radius) {
+        return Math.max(DummySettings.MIN_CHUNK_RADIUS, Math.min(maxChunkRadius(world), radius));
+    }
+
+    /**
      * 注入动作服务，允许持久化时把正在运行的 repeat 动作一起写入。
      * 必须在 {@link #restoreSavedDummies} 之前调用，否则恢复出来的
      * 假人不会有动作。

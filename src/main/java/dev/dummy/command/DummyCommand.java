@@ -4,6 +4,7 @@ import dev.dummy.DummyPlugin;
 import dev.dummy.action.DummyActionService;
 import dev.dummy.dummy.DummyInstance;
 import dev.dummy.dummy.DummyManager;
+import dev.dummy.dummy.DummySettings;
 import dev.dummy.dummy.DummySkin;
 import dev.dummy.gui.DummyGuiListener;
 import dev.dummy.i18n.I18n;
@@ -32,7 +33,7 @@ public final class DummyCommand implements BasicCommand {
     private static final List<String> CONFIG_BOOLEAN_KEYS = List.of(
             "invulnerable", "collision", "physics", "spawning", "chunk-loader", "show-in-tab"
     );
-    private static final List<String> CHUNK_RADIUS_SUGGESTIONS = List.of("0", "2", "4", "8", "16", "32");
+    private static final List<String> CHUNK_RADIUS_SUGGESTIONS = List.of("0", "1", "2", "4", "8", "16", "32");
     private static final List<String> ACTIONS = List.of(
             "attack", "chat", "command", "drop", "hold", "jump", "look", "lookat", "mine", "mount", "move", "place", "sneak", "swap", "use", "stop"
     );
@@ -126,7 +127,7 @@ public final class DummyCommand implements BasicCommand {
                 return filter(List.of("true", "false"), args[3]);
             }
             if (key.equals("chunk-radius")) {
-                return filter(CHUNK_RADIUS_SUGGESTIONS, args[3]);
+                return filter(chunkRadiusSuggestions(args[1]), args[3]);
             }
             return List.of();
         }
@@ -238,10 +239,31 @@ public final class DummyCommand implements BasicCommand {
             message(sender, "usage.config", NamedTextColor.YELLOW);
             return;
         }
-        requireManaged(sender, args[1]);
+        DummyInstance dummy = requireManaged(sender, args[1]);
+        String key = args[2].toLowerCase(Locale.ROOT);
         String value = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
-        dummyManager.updateSettings(args[1], args[2].toLowerCase(Locale.ROOT), value);
+        if (key.equals("chunk-radius")) {
+            requireWithinChunkRadiusLimit(dummy, value);
+        }
+        dummyManager.updateSettings(dummy.name(), key, value);
         message(sender, "command.config-updated", NamedTextColor.GREEN, args[1], args[2], value);
+    }
+
+    /**
+     * 加载半径除了受硬上限约束，还受 {@code limits.max-chunk-radius}（默认跟随世界
+     * {@code simulation-distance}）约束，超出时给出明确提示而不是静默收敛。
+     */
+    private void requireWithinChunkRadiusLimit(DummyInstance dummy, String value) {
+        int max = dummyManager.maxChunkRadius(dummy.location().getWorld());
+        int requested;
+        try {
+            requested = Integer.parseInt(value.trim());
+        } catch (NumberFormatException ignored) {
+            throw new LocalizedException("error.invalid-number", value);
+        }
+        if (requested < DummySettings.MIN_CHUNK_RADIUS || requested > max) {
+            throw new LocalizedException("error.chunk-radius-limit", DummySettings.MIN_CHUNK_RADIUS, max);
+        }
     }
 
     private void skin(CommandSender sender, String[] args) {
@@ -563,6 +585,17 @@ public final class DummyCommand implements BasicCommand {
             }
         }
         return -1;
+    }
+
+    /**
+     * 加载半径补全：给出不超过该世界上限的常用取值。
+     */
+    private List<String> chunkRadiusSuggestions(String dummyName) {
+        DummyInstance dummy = dummyManager.get(dummyName);
+        int max = dummy == null ? DummySettings.MAX_CHUNK_RADIUS : dummyManager.maxChunkRadius(dummy.location().getWorld());
+        return CHUNK_RADIUS_SUGGESTIONS.stream()
+                .filter(candidate -> Integer.parseInt(candidate) <= max)
+                .toList();
     }
 
     private List<String> actionArgumentSuggestions(String action) {

@@ -1,6 +1,7 @@
 package dev.dummy.dummy;
 
 import dev.dummy.i18n.LocalizedException;
+import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 
 public record DummySettings(
@@ -72,6 +73,25 @@ public record DummySettings(
      */
     public int effectiveChunkRadius() {
         return chunkLoader ? chunkRadius : 0;
+    }
+
+    /**
+     * 该半径覆盖的区块边长（区块数），即 {@code 2 * radius + 1}。
+     */
+    public int chunkSpan(int radius) {
+        return radius * 2 + 1;
+    }
+
+    /**
+     * 配置允许的加载半径上限：{@code limits.max-chunk-radius} 为负时跟随世界的
+     * {@code simulation-distance}，否则使用配置值；结果统一收敛到 0-{@link #MAX_CHUNK_RADIUS}。
+     */
+    public static int maxRadius(ConfigurationSection config, World world) {
+        int configured = config == null ? -1 : config.getInt("limits.max-chunk-radius", -1);
+        int base = configured >= 0
+                ? configured
+                : (world == null ? MAX_CHUNK_RADIUS : world.getSimulationDistance());
+        return Math.max(MIN_CHUNK_RADIUS, Math.min(MAX_CHUNK_RADIUS, base));
     }
 
     public String displayName(String name) {

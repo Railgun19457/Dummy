@@ -137,7 +137,7 @@ Main `config.yml` sections:
 
 - `language`: Language file, built-in values are `zh_CN` and `en_US`
 - `defaults`: Default settings for newly created dummies
-- `limits`: Server-wide and per-player dummy limits, use `-1` for unlimited
+- `limits`: Server-wide and per-player dummy limits, use `-1` for unlimited (`max-chunk-radius` uses `-1` to follow the world `simulation-distance`)
 - `storage`: Startup restoration and removed-data retention
 - `inventory`: Whether inventory, armor, and offhand items drop when a dummy is removed or the plugin shuts down
 - `commands`: Console commands executed before and after dummy creation
@@ -153,11 +153,13 @@ Per-dummy settings configurable by command (defaults apply to newly created dumm
 | `physics` | `true` | Whether gravity and block collisions apply; disable it for a floating dummy that passes through blocks |
 | `spawning` | `false` | Whether the dummy counts as a player for natural mob spawning; when disabled, the dummy does not make nearby chunks spawn mobs |
 | `chunk-loader` | `true` | Whether chunks around the dummy are loaded and ticked using `chunk-radius` |
-| `chunk-radius` | `0` | Chunk radius (`0`-`32`); `0` loads only the dummy's own chunk, and random ticks (crops, fire spread) require a radius of at least 1 |
+| `chunk-radius` | `0` | Chunk radius (`0`-`32`); the covered area is `(2r+1)×(2r+1)` chunks, e.g. `4` covers `9×9`. `0` loads only the dummy's own chunk, and random ticks (crops, fire spread) require a radius of at least 1. The upper bound comes from `limits.max-chunk-radius` |
 | `show-in-tab` | `false` | Whether the dummy appears in the Tab list |
 | `name-format` | `%name%` | Display name format, supports `%name%` |
 
-Command usage: `/dummy config <name> <key> [value]`, where `chunk-radius` accepts `0`-`32` and every other setting accepts `true`/`false`. In the GUI, "Chunk Radius" cycles through `0`-`32` with left click `+1` and right click `-1`.
+Command usage: `/dummy config <name> <key> [value]`, where `chunk-radius` accepts `0`-limit and every other setting accepts `true`/`false`. In the GUI, "Chunk Range" cycles through `0`-limit with left click `+1` and right click `-1`, and shows the covered chunk area (for example `9x9 chunks`).
+
+`limits.max-chunk-radius`: upper bound for a dummy's chunk radius. The default `-1` follows each world's `simulation-distance` (the server's own chunk loading radius); a concrete value fixes the bound but is still clamped to the API hard limit of `32`. Values above the bound are rejected by the command with the current limit shown, instead of being silently clamped.
 
 Settings are independent: when `chunk-loader` is disabled, `chunk-radius` has no effect (it behaves like `0`, keeping only the dummy's own chunk).
 
@@ -176,7 +178,7 @@ A dummy is a real server-side `ServerPlayer`, so the server's player chunk loade
 
 | Setting | Effect |
 | --- | --- |
-| `chunk-loader: true` + `chunk-radius: n` | Tick radius = `n` chunks (square); load radius = `max(n, 2) + 1` |
+| `chunk-loader: true` + `chunk-radius: n` | Tick area = a square of `(2n+1)` chunks centred on the dummy's chunk (`9x9` for `n=4`); the load area extends one more ring (the API view distance floor is 2) |
 | `chunk-loader: false` | Treated as `n = 0`: only the dummy's own chunk is ticked |
 | Send distance | Fixed at 2: the dummy never receives usable packets, so keeping it minimal avoids building chunk packets |
 
