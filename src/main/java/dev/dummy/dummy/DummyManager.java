@@ -423,6 +423,18 @@ public final class DummyManager {
     }
 
     /**
+     * 该玩家是否为需要抑制天然刷怪的假人（{@code spawning: false}）。
+     *
+     * <p>Paper 每 tick 为每个玩家触发并缓存 {@code PlayerNaturallySpawnCreaturesEvent}，
+     * 服务端据此判断哪些区块算作“有玩家在刷怪范围”，因此取消该事件即可让假人不再
+     * 制造刷怪点，同时不影响真实玩家与刷怪笼等其它刷怪来源。</p>
+     */
+    public boolean suppressesSpawning(Player player) {
+        DummyInstance dummy = dummiesByUuid.get(player.getUniqueId());
+        return dummy != null && !dummy.settings().spawning();
+    }
+
+    /**
      * 玩家上线时同步所有假人的 tab listed 状态。
      * 不做实体追踪操作 — vanilla 会在玩家进入追踪范围时自动 spawn 附近实体。
      */

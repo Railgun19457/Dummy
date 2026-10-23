@@ -8,7 +8,7 @@
 - 发包距离固定为 2，减少假人侧区块包的构造开销；`chunk-loader` 关闭时视距按 `0` 处理，只保留假人所在区块。
 - 假人配置重新整理为 6 个独立开关 + 2 个界面项：`invulnerable`（无敌）、`collision`（碰撞）、`physics`（物理）、`spawning`（刷怪）、`chunk-loader`（区块加载）、`chunk-radius`（加载半径）、`show-in-tab`、`name-format`。
 - 移除 `ghost`（幽灵模式）：原语义拆为 `invulnerable` + `collision` + `physics` + `chunk-loader` 四个显式开关组合。升级时 `dummies.db` 会自动把 `ghost = 1` 的行展开为这四项，并新增 `physics`、`spawning`、`chunk_radius` 三列，无需手动迁移。
-- 新增 `spawning` 配置项并默认关闭：假人不再因为自身存在而让周围区块刷怪。
+- 新增 `spawning` 配置项并默认关闭：通过取消假人的 `PlayerNaturallySpawnCreaturesEvent`，让假人不再作为天然刷怪的“上下文玩家”。假人周围不会因为它的存在而刷怪，也不再计入附近刷怪上限；真实玩家、刷怪笼、繁殖与刷怪蛋等来源不受影响。
 - 新增 `chunk-radius` 配置项（`0`-`32`，默认 `0`）：`0` 表示只加载假人所在区块，数值越大范围越大；`chunk-loader` 关闭时该项不生效。GUI 与命令均可调整。
 - 「配置 GUI」重排：`10` 背包、`11` 无敌、`12` 碰撞、`13` 物理、`14` 刷怪、`15` 区块加载、`16` 加载半径（左键 +1 / 右键 -1 循环 `0`-`32`）、`22` 显示在 Tab。
 - 布尔配置项在 GUI 中改为显示「开 / 关」。

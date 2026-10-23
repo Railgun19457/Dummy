@@ -161,6 +161,15 @@ Command usage: `/dummy config <name> <key> [value]`, where `chunk-radius` accept
 
 Settings are independent: when `chunk-loader` is disabled, `chunk-radius` has no effect (it behaves like `0`, keeping only the dummy's own chunk).
 
+### Spawning semantics
+
+A dummy is a real server-side `ServerPlayer`, so by default the server treats it as a spawn-context player and makes chunks within 128 blocks spawn candidates. With `spawning: false` (the default) the plugin cancels the dummy's `PlayerNaturallySpawnCreaturesEvent`, which removes it from that decision:
+
+- The dummy no longer makes nearby chunks spawn mobs, and no longer counts towards the local mob cap;
+- When a real player walks nearby, their own spawning behaviour is unchanged;
+- Mob spawners, breeding, spawn eggs, and structure spawning are not affected (with `spawning: true` the dummy keeps the vanilla behaviour);
+- The implementation is one hash lookup per player per tick — no entity scans and no intercepting of spawn results.
+
 ### Chunk loading semantics
 
 A dummy is a real server-side `ServerPlayer`, so the server's player chunk loader already loads and ticks chunks around it based on its own view distance. Dummy no longer registers per-chunk plugin tickets; it sets the dummy's own view distances instead:
