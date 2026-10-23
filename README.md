@@ -36,7 +36,7 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
    - `plugins/Dummy/config.yml`
    - `plugins/Dummy/lang/zh_CN.yml`
    - `plugins/Dummy/lang/en_US.yml`
-   - `plugins/Dummy/dummies.yml`
+   - `plugins/Dummy/dummies.db`
    - `plugins/Dummy/skins.yml`
 
 ## 命令
@@ -166,15 +166,25 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 
 ## 数据文件
 
-- `dummies.yml`：保存当前假人和已移除假人的数据
+- `dummies.db`：SQLite 数据库，保存当前假人和已移除假人的数据；启用 WAL 模式，物品以 Bukkit 序列化的 BLOB 存储
 - `skins.yml`：保存通过玩家名拉取到的皮肤缓存
 - `lang/zh_CN.yml`：中文消息文件
 - `lang/en_US.yml`：英文消息文件
 
+升级提示：从 0.3.x 升级时，首次启动会自动把旧 `dummies.yml` 迁移到 `dummies.db`（仅在数据库为空时执行），并把原文件重命名为 `dummies.yml.bak`。可通过 `storage.migrate-from-yml` 关闭迁移。
+
 ## 本地构建
 
+需要 JDK 21 或更高版本，请使用仓库自带的 Gradle Wrapper（已固定为 9.8.1；paperweight 2.0.0-SNAPSHOT 要求 Gradle 9.7.1 以上）：
+
 ```bash
-gradle clean build
+./gradlew clean build
+```
+
+Windows 下使用：
+
+```bat
+gradlew.bat clean build
 ```
 
 构建产物位于：

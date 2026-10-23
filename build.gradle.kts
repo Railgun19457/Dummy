@@ -1,5 +1,6 @@
 plugins {
     java
+    // Requires Gradle 9.7.1+ for the 2.0.0-SNAPSHOT plugin marker; the wrapper is pinned to 9.8.1.
     id("io.papermc.paperweight.userdev") version "2.0.0-SNAPSHOT"
 }
 

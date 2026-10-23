@@ -1,5 +1,18 @@
 # 更新日志
 
+## 未发布
+
+### 修复
+
+- 修复假人通过经验修补和经验球获得经验后未标记 dirty、导致周期自动保存无法落盘的问题。
+- `DummyManager.save()` 不再是无操作的空方法，改为标记所有在线假人为 dirty。
+
+### 文档与构建
+
+- 修复 README 中仍把 `dummies.yml` 写为数据文件的错误，改为 SQLite `dummies.db` 并补充迁移说明。
+- 补充 Gradle Wrapper（固定 9.8.1），构建方式改为 `./gradlew clean build`；paperweight 2.0.0-SNAPSHOT 要求 Gradle 9.7.1 以上。
+- 删除未被引用、只会打进 Jar 的 `messages.yml`。
+
 ## 0.4.2 - 2026-08-16
 
 ### 修复

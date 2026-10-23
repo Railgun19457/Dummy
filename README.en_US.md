@@ -36,7 +36,7 @@ Dummy is a fake player plugin for modern Paper servers. It creates real server-s
    - `plugins/Dummy/config.yml`
    - `plugins/Dummy/lang/zh_CN.yml`
    - `plugins/Dummy/lang/en_US.yml`
-   - `plugins/Dummy/dummies.yml`
+   - `plugins/Dummy/dummies.db`
    - `plugins/Dummy/skins.yml`
 
 ## Commands
@@ -166,15 +166,25 @@ Command placeholders for `commands.before-spawn` and `commands.after-spawn`:
 
 ## Data Files
 
-- `dummies.yml`: Stores active and removed dummy data
+- `dummies.db`: SQLite database storing active and removed dummy data; WAL mode is enabled and items are stored as Bukkit-serialized BLOBs
 - `skins.yml`: Stores skin cache fetched by player name
 - `lang/zh_CN.yml`: Chinese language file
 - `lang/en_US.yml`: English language file
 
+Migration note: when upgrading from 0.3.x, the legacy `dummies.yml` is migrated into `dummies.db` on first startup (only when the database is empty) and the original file is renamed to `dummies.yml.bak`. Set `storage.migrate-from-yml` to `false` to skip the migration.
+
 ## Local Build
 
+JDK 21 or newer is required. Use the bundled Gradle Wrapper (pinned to 9.8.1; paperweight 2.0.0-SNAPSHOT requires Gradle 9.7.1 or newer):
+
 ```bash
-gradle clean build
+./gradlew clean build
+```
+
+On Windows:
+
+```bat
+gradlew.bat clean build
 ```
 
 Build output:
