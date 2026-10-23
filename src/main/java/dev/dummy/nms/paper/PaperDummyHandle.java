@@ -55,11 +55,11 @@ public final class PaperDummyHandle implements DummyHandle {
     public void applySettings(String name, DummySettings settings) {
         Player player = player();
         Component displayName = Component.text(settings.displayName(name));
-        player.setInvulnerable(settings.invulnerable() || settings.ghost());
-        player.setCollidable(settings.collision() && !settings.ghost());
-        applyCollisionRule(player, settings.collision() && !settings.ghost());
-        player.setGravity(!settings.ghost());
-        player.setNoPhysics(settings.ghost());
+        player.setInvulnerable(settings.invulnerable());
+        player.setCollidable(settings.collision());
+        applyCollisionRule(player, settings.collision());
+        player.setGravity(settings.physics());
+        player.setNoPhysics(!settings.physics());
         player.setInvisible(false);
         player.displayName(displayName);
         player.playerListName(displayName);

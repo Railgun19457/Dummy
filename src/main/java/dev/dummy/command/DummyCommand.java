@@ -25,7 +25,13 @@ public final class DummyCommand implements BasicCommand {
     private static final List<String> SUBCOMMANDS = List.of(
             "spawn", "remove", "delete", "list", "reload", "config", "skin", "exp", "inv", "tpto", "tphere", "tps", "actions"
     );
-    private static final List<String> CONFIG_KEYS = List.of("invulnerable", "collision", "ghost", "chunk-loader", "show-in-tab", "name-format");
+    private static final List<String> CONFIG_KEYS = List.of(
+            "invulnerable", "collision", "physics", "spawning", "chunk-loader", "chunk-radius", "show-in-tab", "name-format"
+    );
+    private static final List<String> CONFIG_BOOLEAN_KEYS = List.of(
+            "invulnerable", "collision", "physics", "spawning", "chunk-loader", "show-in-tab"
+    );
+    private static final List<String> CHUNK_RADIUS_SUGGESTIONS = List.of("0", "2", "4", "8", "16", "32");
     private static final List<String> ACTIONS = List.of(
             "attack", "chat", "command", "drop", "hold", "jump", "look", "lookat", "mine", "mount", "move", "place", "sneak", "swap", "use", "stop"
     );
@@ -113,8 +119,15 @@ public final class DummyCommand implements BasicCommand {
         if (args.length == 3 && args[0].equalsIgnoreCase("config")) {
             return filter(CONFIG_KEYS, args[2]);
         }
-        if (args.length == 4 && args[0].equalsIgnoreCase("config") && !args[2].equalsIgnoreCase("name-format")) {
-            return filter(List.of("true", "false"), args[3]);
+        if (args.length == 4 && args[0].equalsIgnoreCase("config")) {
+            String key = args[2].toLowerCase(Locale.ROOT);
+            if (CONFIG_BOOLEAN_KEYS.contains(key)) {
+                return filter(List.of("true", "false"), args[3]);
+            }
+            if (key.equals("chunk-radius")) {
+                return filter(CHUNK_RADIUS_SUGGESTIONS, args[3]);
+            }
+            return List.of();
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("skin")) {
             return filter(List.of("set", "clear"), args[2]);

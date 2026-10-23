@@ -2,6 +2,15 @@
 
 ## 未发布
 
+### 变更
+
+- 假人配置重新整理为 6 个独立开关 + 2 个界面项：`invulnerable`（无敌）、`collision`（碰撞）、`physics`（物理）、`spawning`（刷怪）、`chunk-loader`（区块加载）、`chunk-radius`（加载半径）、`show-in-tab`、`name-format`。
+- 移除 `ghost`（幽灵模式）：原语义拆为 `invulnerable` + `collision` + `physics` + `chunk-loader` 四个显式开关组合。升级时 `dummies.db` 会自动把 `ghost = 1` 的行展开为这四项，并新增 `physics`、`spawning`、`chunk_radius` 三列，无需手动迁移。
+- 新增 `spawning` 配置项并默认关闭：假人不再因为自身存在而让周围区块刷怪。
+- 新增 `chunk-radius` 配置项（`0`-`32`，默认 `0`）：`0` 表示只加载假人所在区块，数值越大范围越大；`chunk-loader` 关闭时该项不生效。GUI 与命令均可调整。
+- 「配置 GUI」重排：`10` 背包、`11` 无敌、`12` 碰撞、`13` 物理、`14` 刷怪、`15` 区块加载、`16` 加载半径（左键 +1 / 右键 -1 循环 `0`-`32`）、`22` 显示在 Tab。
+- 布尔配置项在 GUI 中改为显示「开 / 关」。
+
 ### 修复
 
 - 修复假人通过经验修补和经验球获得经验后未标记 dirty、导致周期自动保存无法落盘的问题。
@@ -9,7 +18,7 @@
 
 ### 文档与构建
 
-- 修复 README 中仍把 `dummies.yml` 写为数据文件的错误，改为 SQLite `dummies.db` 并补充迁移说明。
+- README 补充完整配置项表格、取值范围与相互依赖说明；修正数据文件仍写 `dummies.yml` 的错误（改为 SQLite `dummies.db` 并补充迁移说明）。
 - 补充 Gradle Wrapper（固定 9.8.1），构建方式改为 `./gradlew clean build`；paperweight 2.0.0-SNAPSHOT 要求 Gradle 9.7.1 以上。
 - 删除未被引用、只会打进 Jar 的 `messages.yml`。
 

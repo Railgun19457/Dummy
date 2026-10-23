@@ -144,14 +144,22 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 - `death`：假人死亡后是否自动重新召唤
 - `actions`：动作系统配置，例如生命周期保留动作、攻击 fallback 和骑乘搜索范围
 
-可通过命令修改的假人配置项：
+可通过命令修改的假人配置项（默认值为新建假人的默认配置）：
 
-- `invulnerable`：是否无敌
-- `collision`：是否启用碰撞
-- `ghost`：幽灵模式，假人会无敌、无碰撞、无重力且不加载区块
-- `chunk-loader`：是否按世界 `simulation-distance` 加载周围区块
-- `show-in-tab`：是否显示在 Tab 列表
-- `name-format`：假人显示名格式，支持 `%name%`
+| 配置项 | 默认 | 说明 |
+| --- | --- | --- |
+| `invulnerable` | `false` | 是否无敌 |
+| `collision` | `true` | 是否与其它实体碰撞、互相推挤 |
+| `physics` | `true` | 是否启用地心引力与方块碰撞；关闭后假人不会下落，可以穿墙 |
+| `spawning` | `false` | 是否作为刷怪上下文玩家；关闭后假人周围不会因为它的存在而刷怪 |
+| `chunk-loader` | `true` | 是否按 `chunk-radius` 加载并 tick 假人周围区块 |
+| `chunk-radius` | `0` | 加载半径（区块，`0`-`32`）；`0` 只加载假人所在区块，半径 ≥1 才有随机刻（作物、火焰蔓延） |
+| `show-in-tab` | `false` | 是否显示在 Tab 列表 |
+| `name-format` | `%name%` | 假人显示名格式，支持 `%name%` |
+
+命令用法：`/dummy config <name> <key> [value]`；`chunk-radius` 取值 `0`-`32`，其余为 `true`/`false`。GUI 中「加载半径」左键 +1、右键 -1，在 `0`-`32` 之间循环。
+
+配置项之间相互独立：关闭 `chunk-loader` 时 `chunk-radius` 不生效（等价于 `0`，即只保留假人所在区块）。
 
 创建前后命令支持的占位符：
 

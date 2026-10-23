@@ -80,11 +80,13 @@ public final class DummyGuiListener implements Listener {
 
         switch (event.getRawSlot()) {
             case 10 -> Bukkit.getScheduler().runTask(plugin, () -> openDummyInventory(player, dummy));
-            case 12 -> toggle(player, dummy, "invulnerable", dummy.settings().invulnerable());
-            case 13 -> toggle(player, dummy, "collision", dummy.settings().collision());
-            case 14 -> toggle(player, dummy, "chunk-loader", dummy.settings().chunkLoader());
-            case 15 -> toggle(player, dummy, "show-in-tab", dummy.settings().showInTab());
-            case 16 -> toggle(player, dummy, "ghost", dummy.settings().ghost());
+            case 11 -> toggle(player, dummy, "invulnerable", dummy.settings().invulnerable());
+            case 12 -> toggle(player, dummy, "collision", dummy.settings().collision());
+            case 13 -> toggle(player, dummy, "physics", dummy.settings().physics());
+            case 14 -> toggle(player, dummy, "spawning", dummy.settings().spawning());
+            case 15 -> toggle(player, dummy, "chunk-loader", dummy.settings().chunkLoader());
+            case 16 -> cycleChunkRadius(player, dummy, event.isLeftClick());
+            case 22 -> toggle(player, dummy, "show-in-tab", dummy.settings().showInTab());
             default -> {
             }
         }
@@ -168,6 +170,21 @@ public final class DummyGuiListener implements Listener {
         openConfigMenu(viewer, dummyManager.require(dummy.name()));
     }
 
+    /**
+     * 左键 +1、右键 -1，在 0..32 之间循环。
+     */
+    private void cycleChunkRadius(Player viewer, DummyInstance dummy, boolean forward) {
+        if (!ensureCanManage(viewer, dummy)) {
+            return;
+        }
+        int span = DummySettings.MAX_CHUNK_RADIUS - DummySettings.MIN_CHUNK_RADIUS + 1;
+        int current = dummy.settings().chunkRadius();
+        int offset = (current - DummySettings.MIN_CHUNK_RADIUS + (forward ? 1 : span - 1)) % span;
+        int next = DummySettings.MIN_CHUNK_RADIUS + offset;
+        dummyManager.updateSettings(dummy.name(), "chunk-radius", Integer.toString(next));
+        openConfigMenu(viewer, dummyManager.require(dummy.name()));
+    }
+
     public void openConfigMenu(Player viewer, DummyInstance dummy) {
         if (!ensureCanManage(viewer, dummy)) {
             return;
@@ -177,11 +194,13 @@ public final class DummyGuiListener implements Listener {
         holder.inventory(inventory);
         DummySettings settings = dummy.settings();
         inventory.setItem(10, item(Material.CHEST, i18n.tr("gui.inventory"), i18n.tr("gui.inventory-lore")));
-        inventory.setItem(12, toggleItem("gui.invulnerable", settings.invulnerable()));
-        inventory.setItem(13, toggleItem("gui.collision", settings.collision()));
-        inventory.setItem(14, toggleItem("gui.chunk-loader", settings.chunkLoader()));
-        inventory.setItem(15, toggleItem("gui.show-in-tab", settings.showInTab()));
-        inventory.setItem(16, toggleItem("gui.ghost", settings.ghost()));
+        inventory.setItem(11, toggleItem("gui.invulnerable", settings.invulnerable()));
+        inventory.setItem(12, toggleItem("gui.collision", settings.collision()));
+        inventory.setItem(13, toggleItem("gui.physics", settings.physics()));
+        inventory.setItem(14, toggleItem("gui.spawning", settings.spawning()));
+        inventory.setItem(15, toggleItem("gui.chunk-loader", settings.chunkLoader()));
+        inventory.setItem(16, radiusItem(settings));
+        inventory.setItem(22, toggleItem("gui.show-in-tab", settings.showInTab()));
         viewer.openInventory(inventory);
     }
 
@@ -205,8 +224,17 @@ public final class DummyGuiListener implements Listener {
     private ItemStack toggleItem(String nameKey, boolean enabled) {
         return item(
                 enabled ? Material.LIME_DYE : Material.GRAY_DYE,
-                i18n.tr("gui.toggle", i18n.tr(nameKey), enabled),
+                i18n.tr("gui.toggle", i18n.tr(nameKey), i18n.tr(enabled ? "gui.state-on" : "gui.state-off")),
                 i18n.tr("gui.toggle-lore")
+        );
+    }
+
+    private ItemStack radiusItem(DummySettings settings) {
+        boolean active = settings.chunkLoader();
+        return item(
+                Material.COMPASS,
+                i18n.tr("gui.chunk-radius", settings.chunkRadius()),
+                active ? i18n.tr("gui.chunk-radius-lore") : i18n.tr("gui.chunk-radius-disabled-lore")
         );
     }
 

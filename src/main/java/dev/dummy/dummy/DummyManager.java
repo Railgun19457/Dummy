@@ -671,7 +671,7 @@ public final class DummyManager {
     }
 
     private void updateChunkTicket(DummyInstance dummy) {
-        if (!dummy.settings().chunkLoader() || dummy.settings().ghost()) {
+        if (!dummy.settings().chunkLoader()) {
             releaseChunkTicket(dummy);
             return;
         }
@@ -684,7 +684,7 @@ public final class DummyManager {
 
         int centerX = location.getBlockX() >> 4;
         int centerZ = location.getBlockZ() >> 4;
-        int radius = Math.max(0, world.getSimulationDistance());
+        int radius = dummy.settings().effectiveChunkRadius();
         LoadedChunkTickets current = chunkTickets.get(dummy.uuid());
         if (current != null && current.matches(world, centerX, centerZ, radius)) {
             return;

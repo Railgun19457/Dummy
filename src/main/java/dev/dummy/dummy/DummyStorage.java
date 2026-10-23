@@ -48,8 +48,13 @@ public final class DummyStorage {
                 pitch            REAL NOT NULL,
                 invulnerable     INTEGER NOT NULL,
                 collision        INTEGER NOT NULL,
+                -- Legacy ghost flag kept so that rolling back to an older jar keeps
+                -- working; the current code always writes 0 and uses physics instead.
                 ghost            INTEGER NOT NULL,
+                physics          INTEGER NOT NULL,
+                spawning         INTEGER NOT NULL,
                 chunk_loader     INTEGER NOT NULL,
+                chunk_radius     INTEGER NOT NULL,
                 show_in_tab      INTEGER NOT NULL,
                 name_format      TEXT NOT NULL,
                 skin_type        TEXT NOT NULL,
@@ -74,12 +79,12 @@ public final class DummyStorage {
             INSERT OR REPLACE INTO dummies (
                 name, uuid, creator_uuid, creator_name, display_name,
                 world, x, y, z, yaw, pitch,
-                invulnerable, collision, ghost, chunk_loader, show_in_tab, name_format,
+                invulnerable, collision, ghost, physics, spawning, chunk_loader, chunk_radius, show_in_tab, name_format,
                 skin_type, skin_value, skin_signature, skin_model_parts, skin_fetched_at,
                 storage_contents, armor_contents, offhand_item,
                 exp_level, exp_progress, exp_total, state,
                 vehicle_uuid, active_actions
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
     private static final String SELECT_ACTIVE_SQL = "SELECT * FROM dummies WHERE state = 'active'";
     private static final String SELECT_REMOVED_SQL = "SELECT * FROM dummies WHERE name = ? COLLATE NOCASE AND state = 'removed'";
@@ -128,22 +133,54 @@ public final class DummyStorage {
             stmt.execute(INDEX_STATE_SQL);
             stmt.execute(INDEX_UUID_SQL);
             // Incremental column additions for existing databases created
-            // before vehicle_uuid / active_actions were introduced.
+            // before the newer columns were introduced.
             addColumnIfMissing(stmt, "dummies", "vehicle_uuid", "TEXT");
             addColumnIfMissing(stmt, "dummies", "active_actions", "TEXT");
+            boolean addedPhysics = addColumnIfMissing(stmt, "dummies", "physics", "INTEGER NOT NULL DEFAULT 1");
+            boolean addedSpawning = addColumnIfMissing(stmt, "dummies", "spawning", "INTEGER NOT NULL DEFAULT 0");
+            boolean addedRadius = addColumnIfMissing(stmt, "dummies", "chunk_radius", "INTEGER NOT NULL DEFAULT 0");
+            if (addedPhysics || addedSpawning || addedRadius) {
+                migrateGhostSettings(stmt);
+            }
         }
     }
 
-    private void addColumnIfMissing(Statement stmt, String table, String column, String type) throws SQLException {
-        try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + table + ")")) {
-            while (rs.next()) {
-                if (column.equalsIgnoreCase(rs.getString("name"))) {
-                    return;
-                }
-            }
+    /**
+     * 幽灵模式已拆分为 physics / collision / invulnerable / chunk-loader 四个显式开关，
+     * 这里在首次添加新列时把旧数据里的 ghost=1 展开，避免升级后行为变化。
+     */
+    private void migrateGhostSettings(Statement stmt) throws SQLException {
+        if (!hasColumn(stmt, "dummies", "ghost")) {
+            return;
+        }
+        int migrated = stmt.executeUpdate("""
+                UPDATE dummies
+                   SET invulnerable = 1, collision = 0, physics = 0, chunk_loader = 0
+                 WHERE ghost = 1
+                """);
+        if (migrated > 0) {
+            plugin.getLogger().info("Migrated " + migrated + " ghost dummy row(s) to explicit physics/collision settings");
+        }
+    }
+
+    private boolean addColumnIfMissing(Statement stmt, String table, String column, String type) throws SQLException {
+        if (hasColumn(stmt, table, column)) {
+            return false;
         }
         stmt.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + type);
         plugin.getLogger().info("Added column '" + column + "' to table '" + table + "'");
+        return true;
+    }
+
+    private boolean hasColumn(Statement stmt, String table, String column) throws SQLException {
+        try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + table + ")")) {
+            while (rs.next()) {
+                if (column.equalsIgnoreCase(rs.getString("name"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public List<DummyRecord> load() {
@@ -273,8 +310,11 @@ public final class DummyStorage {
         DummySettings settings = record.settings();
         ps.setInt(i++, settings.invulnerable() ? 1 : 0);
         ps.setInt(i++, settings.collision() ? 1 : 0);
-        ps.setInt(i++, settings.ghost() ? 1 : 0);
+        ps.setInt(i++, 0); // legacy ghost column, kept for rollback compatibility
+        ps.setInt(i++, settings.physics() ? 1 : 0);
+        ps.setInt(i++, settings.spawning() ? 1 : 0);
         ps.setInt(i++, settings.chunkLoader() ? 1 : 0);
+        ps.setInt(i++, settings.chunkRadius());
         ps.setInt(i++, settings.showInTab() ? 1 : 0);
         ps.setString(i++, settings.nameFormat());
         DummySkin skin = record.skin();
@@ -318,8 +358,10 @@ public final class DummyStorage {
         DummySettings settings = new DummySettings(
                 rs.getBoolean("invulnerable"),
                 rs.getBoolean("collision"),
-                rs.getBoolean("ghost"),
+                rs.getBoolean("physics"),
+                rs.getBoolean("spawning"),
                 rs.getBoolean("chunk_loader"),
+                rs.getInt("chunk_radius"),
                 rs.getBoolean("show_in_tab"),
                 rs.getString("name_format")
         );
@@ -554,6 +596,13 @@ public final class DummyStorage {
         DummySettings settings = settingsSection == null
                 ? DummySettings.defaults(plugin.getConfig())
                 : DummySettings.fromConfig(settingsSection);
+        if (settingsSection != null && settingsSection.getBoolean("ghost", false)) {
+            settings = settings
+                    .with("invulnerable", "true")
+                    .with("collision", "false")
+                    .with("physics", "false")
+                    .with("chunk-loader", "false");
+        }
         DummySkin skin = DummySkin.fromConfig(section.getConfigurationSection("skin"));
         DummyExperience experience = DummyExperience.fromConfig(section.getConfigurationSection("experience"));
         ItemStack[] storageContents = readLegacyItems(section, "inventory.storage");

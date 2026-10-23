@@ -144,14 +144,22 @@ Main `config.yml` sections:
 - `death`: Whether a dead dummy is automatically re-summoned
 - `actions`: Action system settings, such as preserving lifecycle actions, attack fallback, and mount search range
 
-Per-dummy settings configurable by command:
+Per-dummy settings configurable by command (defaults apply to newly created dummies):
 
-- `invulnerable`: Whether the dummy is invulnerable
-- `collision`: Whether collision is enabled
-- `ghost`: Ghost mode; the dummy is invulnerable, non-collidable, gravity-free, and does not load chunks
-- `chunk-loader`: Whether to load surrounding chunks using the world's `simulation-distance`
-- `show-in-tab`: Whether the dummy appears in the Tab list
-- `name-format`: Display name format, supports `%name%`
+| Setting | Default | Description |
+| --- | --- | --- |
+| `invulnerable` | `false` | Whether the dummy takes damage |
+| `collision` | `true` | Whether the dummy collides with and pushes other entities |
+| `physics` | `true` | Whether gravity and block collisions apply; disable it for a floating dummy that passes through blocks |
+| `spawning` | `false` | Whether the dummy counts as a player for natural mob spawning; when disabled, the dummy does not make nearby chunks spawn mobs |
+| `chunk-loader` | `true` | Whether chunks around the dummy are loaded and ticked using `chunk-radius` |
+| `chunk-radius` | `0` | Chunk radius (`0`-`32`); `0` loads only the dummy's own chunk, and random ticks (crops, fire spread) require a radius of at least 1 |
+| `show-in-tab` | `false` | Whether the dummy appears in the Tab list |
+| `name-format` | `%name%` | Display name format, supports `%name%` |
+
+Command usage: `/dummy config <name> <key> [value]`, where `chunk-radius` accepts `0`-`32` and every other setting accepts `true`/`false`. In the GUI, "Chunk Radius" cycles through `0`-`32` with left click `+1` and right click `-1`.
+
+Settings are independent: when `chunk-loader` is disabled, `chunk-radius` has no effect (it behaves like `0`, keeping only the dummy's own chunk).
 
 Command placeholders for `commands.before-spawn` and `commands.after-spawn`:
 

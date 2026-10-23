@@ -3,12 +3,22 @@ language: zh_CN
 
 # Default settings applied when a new dummy is created and no saved profile is reused.
 defaults:
+  # If true, the dummy cannot take any damage.
   invulnerable: false
+  # If true, the dummy collides with other entities and can push them.
   collision: true
-  ghost: false
-  # If true, keep chunks around the dummy loaded using the world's simulation-distance.
-  # This is intended to match real-player redstone/entity ticking range for AFK machines.
+  # If true, the dummy is affected by gravity and block collisions.
+  # Disable it for a floating ghost-like dummy that can pass through blocks.
+  physics: true
+  # If true, the dummy counts as a player for natural mob spawning and therefore
+  # makes nearby chunks spawn mobs. Keep it false to only load machines.
+  spawning: false
+  # If true, keep chunks around the dummy loaded and ticking using chunk-radius.
   chunk-loader: true
+  # Chunk radius (0-32) used when chunk-loader is true.
+  # 0 loads only the chunk the dummy stands in; larger values load a square area.
+  # Random ticks (crops, fire spread) require a radius of at least 1.
+  chunk-radius: 0
   show-in-tab: false
   name-format: "%name%"
   
