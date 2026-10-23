@@ -29,7 +29,7 @@ public final class DummyExperienceListener implements Listener {
         if (dummyManager.isDummy(player)) {
             lastMendTickByDummy.put(player.getUniqueId(), player.getTicksLived());
             if (!event.isCancelled() && event.getRepairAmount() > 0) {
-                plugin.getServer().getScheduler().runTask(plugin, dummyManager::save);
+                plugin.getServer().getScheduler().runTask(plugin, () -> dummyManager.markDirty(player.getName()));
             }
         }
     }
@@ -47,7 +47,7 @@ public final class DummyExperienceListener implements Listener {
         int remaining = player.applyMending(event.getAmount());
         if (remaining != event.getAmount()) {
             event.setAmount(remaining);
-            plugin.getServer().getScheduler().runTask(plugin, dummyManager::save);
+            plugin.getServer().getScheduler().runTask(plugin, () -> dummyManager.markDirty(player.getName()));
         }
     }
 

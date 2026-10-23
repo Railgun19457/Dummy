@@ -85,10 +85,13 @@ public final class DummyManager {
     }
 
     /**
-     * 兼容旧 API 调用：触发 dirty 标记即可，不再做全量同步写盘。
+     * 标记所有在线假人为 dirty，交由下次 autoSave 周期异步落盘。
+     * 不再做全量同步写盘；需要立即落盘请使用 {@link #flushNow()}。
      */
     public void save() {
-        // 保留以兼容外部调用；不再做全量同步写盘
+        for (DummyInstance dummy : dummiesByName.values()) {
+            markDirty(dummy.name());
+        }
     }
 
     /**
