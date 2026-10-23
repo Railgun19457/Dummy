@@ -22,7 +22,7 @@ public record DummySettings(
 
     public static DummySettings fromConfig(ConfigurationSection section) {
         DummySettings fallback = defaults();
-        return new DummySettings(
+        DummySettings settings = new DummySettings(
                 section.getBoolean("invulnerable", fallback.invulnerable()),
                 section.getBoolean("collision", fallback.collision()),
                 section.getBoolean("physics", fallback.physics()),
@@ -32,11 +32,25 @@ public record DummySettings(
                 section.getBoolean("show-in-tab", fallback.showInTab()),
                 section.getString("name-format", fallback.nameFormat())
         );
+        return settings.withLegacyGhost(section);
     }
 
     public static DummySettings defaults(ConfigurationSection root) {
         ConfigurationSection section = root.getConfigurationSection("defaults");
         return section == null ? defaults() : fromConfig(section);
+    }
+
+    /**
+     * 兼容旧配置中的 {@code ghost: true}：展开为无敌 + 无碰撞 + 无物理 + 不加载区块。
+     *
+     * <p>只在该配置段没有 {@code physics} 键（即旧版格式）时生效，避免新旧键同时存在时
+     * 覆盖用户显式设置的新值。</p>
+     */
+    private DummySettings withLegacyGhost(ConfigurationSection section) {
+        if (section.isSet("physics") || !section.getBoolean("ghost", false)) {
+            return this;
+        }
+        return new DummySettings(true, false, false, spawning, false, chunkRadius, showInTab, nameFormat);
     }
 
     public DummySettings with(String key, String rawValue) {
@@ -51,10 +65,6 @@ public record DummySettings(
             case "name-format" -> new DummySettings(invulnerable, collision, physics, spawning, chunkLoader, chunkRadius, showInTab, rawValue);
             default -> throw new LocalizedException("error.unknown-config-key", key);
         };
-    }
-
-    public DummySettings withChunkRadius(int radius) {
-        return new DummySettings(invulnerable, collision, physics, spawning, chunkLoader, clampRadius(radius), showInTab, nameFormat);
     }
 
     /**

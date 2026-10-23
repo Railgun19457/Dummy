@@ -596,13 +596,6 @@ public final class DummyStorage {
         DummySettings settings = settingsSection == null
                 ? DummySettings.defaults(plugin.getConfig())
                 : DummySettings.fromConfig(settingsSection);
-        if (settingsSection != null && settingsSection.getBoolean("ghost", false)) {
-            settings = settings
-                    .with("invulnerable", "true")
-                    .with("collision", "false")
-                    .with("physics", "false")
-                    .with("chunk-loader", "false");
-        }
         DummySkin skin = DummySkin.fromConfig(section.getConfigurationSection("skin"));
         DummyExperience experience = DummyExperience.fromConfig(section.getConfigurationSection("experience"));
         ItemStack[] storageContents = readLegacyItems(section, "inventory.storage");
