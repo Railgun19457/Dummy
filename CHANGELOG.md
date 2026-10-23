@@ -1,6 +1,12 @@
 # 更新日志
 
-## 未发布
+## 0.5.0 - 2026-10-24
+
+> **升级须知（破坏性变更）**：假人配置项已重新整理，`ghost`（幽灵模式）被移除，改为 `invulnerable` / `collision` / `physics` / `chunk-loader` 四个独立开关；新增 `spawning`（默认关闭）与 `chunk-radius`（默认 `0`）。
+> - 旧 `dummies.db` 会自动迁移：新增 `physics`、`spawning`、`chunk_radius` 三列，并把 `ghost = 1` 的行展开为原来的幽灵语义，无需手动操作。
+> - 旧 `config.yml` 中的 `defaults.ghost: true` 仍会被识别并展开，但建议改用新键。
+> - **既有假人的 `chunk-radius` 迁移后为 `0`**（只加载假人所在区块）。依赖假人挂机跑机器的存档请用 `/dummy config <name> chunk-radius <半径>` 或 GUI 调大，示例：`4` 覆盖 `9×9` 区块。
+> - 建议删除 `plugins/Dummy/lang/*.yml` 让插件重新生成，否则新增配置项的 GUI 文案会显示为原始键名（如 `gui.physics`）。
 
 ### 新增
 
