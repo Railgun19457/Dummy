@@ -448,11 +448,12 @@ public final class DummyManager {
     }
 
     /**
-     * 该玩家是否为需要抑制天然刷怪的假人（{@code spawning: false}）。
+     * 该玩家是否为需要抑制刷怪的假人（{@code spawning: false}）。
      *
-     * <p>Paper 每 tick 为每个玩家触发并缓存 {@code PlayerNaturallySpawnCreaturesEvent}，
-     * 服务端据此判断哪些区块算作“有玩家在刷怪范围”，因此取消该事件即可让假人不再
-     * 制造刷怪点，同时不影响真实玩家与刷怪笼等其它刷怪来源。</p>
+     * <p>用于两条以玩家为判据的刷怪路径：决定区块是否刷怪的
+     * {@code PlayerNaturallySpawnCreaturesEvent}，以及只看玩家未睡觉天数的幻翼
+     * {@code PhantomPreSpawnEvent}。被剔除的只有假人自身的判定，真实玩家与刷怪笼等
+     * 其它刷怪来源不受影响。</p>
      */
     public boolean suppressesSpawning(Player player) {
         DummyInstance dummy = dummiesByUuid.get(player.getUniqueId());

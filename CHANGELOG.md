@@ -1,5 +1,11 @@
 # 更新日志
 
+## 0.5.1 - 2026-10-27
+
+### 修复
+
+- 修复 `spawning: false` 的假人周围仍会刷出幻翼的问题。服务端的幻翼生成器不看区块刷怪数据，而是按玩家的“未睡觉天数”（`Stats.TIME_SINCE_REST`）判定，假人只要在 tick 该计时就会增长，因此原先仅取消 `PlayerNaturallySpawnCreaturesEvent` 无法覆盖这条路径。现在同时取消假人的 `PhantomPreSpawnEvent`，让两条以玩家为判据的刷怪路径都被拦截；真实玩家的刷怪与其它刷怪来源不受影响。
+
 ## 0.5.0 - 2026-10-24
 
 > **升级须知（破坏性变更）**：假人配置项已重新整理，`ghost`（幽灵模式）被移除，改为 `invulnerable` / `collision` / `physics` / `chunk-loader` 四个独立开关；新增 `spawning`（默认关闭）与 `chunk-radius`（默认 `0`）。

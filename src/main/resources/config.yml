@@ -11,7 +11,8 @@ defaults:
   # Disable it for a floating ghost-like dummy that can pass through blocks.
   physics: true
   # If true, the dummy counts as a player for natural mob spawning and therefore
-  # makes nearby chunks spawn mobs. Keep it false to only load machines.
+  # makes nearby chunks spawn mobs, and phantoms may spawn around it.
+  # Keep it false to only load machines.
   spawning: false
   # If true, keep chunks around the dummy loaded and ticking using chunk-radius.
   chunk-loader: true
