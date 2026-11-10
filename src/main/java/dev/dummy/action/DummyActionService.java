@@ -489,19 +489,24 @@ public final class DummyActionService {
     }
 
     private void place(Player player) {
+        InteractionHand hand = InteractionHand.MAIN_HAND;
         ItemStack held = player.getInventory().getItemInMainHand();
         if (held.isEmpty() || !held.getType().isBlock()) {
-            throw new LocalizedException("error.no-placeable-block");
+            hand = InteractionHand.OFF_HAND;
+            held = player.getInventory().getItemInOffHand();
+            if (held.isEmpty() || !held.getType().isBlock()) {
+                throw new LocalizedException("error.no-placeable-block");
+            }
         }
         Block target = player.getTargetBlockExact(5, FluidCollisionMode.NEVER);
         BlockFace face = player.getTargetBlockFace(5, FluidCollisionMode.NEVER);
         if (target == null || face == null) {
             throw new LocalizedException("error.no-target-block");
         }
-        if (!placeBlock(player, target, face)) {
+        if (!placeBlock(player, target, face, hand)) {
             throw new LocalizedException("error.place-failed");
         }
-        player.swingMainHand();
+        swingHand(player, hand);
         dummyManager.markDirty(player.getName());
     }
 
@@ -513,30 +518,53 @@ public final class DummyActionService {
     }
 
     private void use(Player player) {
-        if (player instanceof CraftPlayer craftPlayer) {
-            ServerPlayer serverPlayer = craftPlayer.getHandle();
-            if (serverPlayer.isUsingItem()) {
-                return;
-            }
+        if (!(player instanceof CraftPlayer craftPlayer)) {
+            player.swingMainHand();
+            player.startUsingItem(EquipmentSlot.HAND);
+            return;
+        }
+        ServerPlayer serverPlayer = craftPlayer.getHandle();
+        if (serverPlayer.isUsingItem()) {
+            return;
+        }
 
-            HitResult target = serverPlayer.pick(5.0D, 1.0F, false);
+        HitResult target = serverPlayer.pick(5.0D, 1.0F, false);
+        for (InteractionHand hand : InteractionHand.values()) {
             if (target instanceof BlockHitResult hit && target.getType() == HitResult.Type.BLOCK) {
-                InteractionHand hand = InteractionHand.MAIN_HAND;
                 net.minecraft.world.item.ItemStack stack = serverPlayer.getItemInHand(hand);
                 InteractionResult result = serverPlayer.gameMode.useItemOn(serverPlayer, serverPlayer.level(), stack, hand, hit);
-                if (result.consumesAction()) {
-                    player.swingMainHand();
-                    dummyManager.markDirty(player.getName());
+                // Paper may return PASS after denying item use in PlayerInteractEvent.
+                if (completeUse(player, hand, result) || result == InteractionResult.FAIL || serverPlayer.gameMode.interactResult) {
                     return;
                 }
-                // A denied block interaction must not fall through to item use.
-                if (result == InteractionResult.FAIL) {
+            }
+
+            // Check normal item use before trying the offhand, matching vanilla priority.
+            net.minecraft.world.item.ItemStack stack = serverPlayer.getItemInHand(hand);
+            if (!stack.isEmpty()) {
+                InteractionResult result = serverPlayer.gameMode.useItem(serverPlayer, serverPlayer.level(), stack, hand);
+                if (completeUse(player, hand, result)) {
                     return;
                 }
             }
         }
-        player.swingMainHand();
-        player.startUsingItem(EquipmentSlot.HAND);
+    }
+
+    private boolean completeUse(Player player, InteractionHand hand, InteractionResult result) {
+        if (!result.consumesAction()) {
+            return false;
+        }
+        swingHand(player, hand);
+        dummyManager.markDirty(player.getName());
+        return true;
+    }
+
+    private void swingHand(Player player, InteractionHand hand) {
+        if (hand == InteractionHand.MAIN_HAND) {
+            player.swingMainHand();
+        } else {
+            player.swingOffHand();
+        }
     }
 
     private Entity nearestEntity(Player player, double range) {
@@ -861,12 +889,11 @@ public final class DummyActionService {
         return player.breakBlock(block);
     }
 
-    private boolean placeBlock(Player player, Block target, BlockFace face) {
+    private boolean placeBlock(Player player, Block target, BlockFace face, InteractionHand hand) {
         if (!(player instanceof CraftPlayer craftPlayer)) {
             return false;
         }
         ServerPlayer serverPlayer = craftPlayer.getHandle();
-        InteractionHand hand = InteractionHand.MAIN_HAND;
         net.minecraft.world.item.ItemStack stack = serverPlayer.getItemInHand(hand);
         Direction direction = CraftBlock.blockFaceToNotch(face);
         BlockHitResult hit = new BlockHitResult(

@@ -79,10 +79,10 @@ Available actions:
 - `mine` Mines the looked-at block
 - `mount` Mounts or dismounts a nearby mountable entity
 - `move [speed|slow|walk|sprint]` Moves toward the current look direction; speed must be between `0` and normal sprint speed, defaults to normal walk speed, and speed/slowness potions stack on top
-- `place` Places the main-hand block against the looked-at block
+- `place` Places a held block against the looked-at block; prefers the main hand and uses the offhand when the main hand has no placeable block, without swapping items
 - `sneak [toggle|on|off]` Toggles or sets sneaking
 - `swap` Swaps main-hand and offhand items
-- `use` Uses the main-hand item; first right-clicks the looked-at block within 5 blocks, supporting log stripping, path creation, tilling, and other block interactions, and falls back to ongoing item use when no block interaction handles the action
+- `use` Tries the main hand, then the offhand; each hand first right-clicks the looked-at block within 5 blocks, then attempts normal item use. The offhand is tried only if the main hand does not handle the action. Supports offhand placement, log stripping, path creation, tilling, and ongoing item use; a denied block interaction does not fall back to the other hand
 - `stop [action]` Stops all actions or one specific action
 
 ### Action Examples
@@ -93,6 +93,8 @@ Available actions:
 /dummy actions bot attack repeat interval:20 duration:1200
 /dummy actions bot use
 /dummy actions bot use repeat interval:20
+/dummy actions bot place
+/dummy actions bot place repeat interval:20
 /dummy actions bot look entity player repeat interval:1
 /dummy actions bot lookat ~ ~ ~5
 /dummy actions bot move repeat

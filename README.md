@@ -79,10 +79,10 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 - `mine` 挖掘视线内方块
 - `mount` 骑乘或离开附近可骑乘实体
 - `move [speed|slow|walk|sprint]` 朝当前视线方向移动，速度范围为 `0` 到正常疾跑速度，默认正常行走速度，速度/缓慢药水会额外叠加
-- `place` 使用主手方块对视线内目标方块进行放置
+- `place` 使用手持方块对视线内目标方块进行放置；优先主手，主手没有可放置方块时使用副手，不交换双手物品
 - `sneak [toggle|on|off]` 切换潜行状态
 - `swap` 交换主手和副手物品
-- `use` 使用主手物品；优先右键视线内 5 格范围的目标方块，支持斧头去皮、铲土、锄地等交互，没有方块交互时保留持续使用物品的行为
+- `use` 按主手、副手顺序使用物品；每只手先尝试右键视线内 5 格范围的目标方块，再尝试普通物品使用，主手均未处理时才尝试副手。支持副手放置、斧头去皮、铲土、锄地和持续使用物品；方块交互被拒绝时不会改用另一只手绕过限制
 - `stop [action]` 停止全部动作或指定动作
 
 ### 动作示例
@@ -93,6 +93,8 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 /dummy actions bot attack repeat interval:20 duration:1200
 /dummy actions bot use
 /dummy actions bot use repeat interval:20
+/dummy actions bot place
+/dummy actions bot place repeat interval:20
 /dummy actions bot look entity player repeat interval:1
 /dummy actions bot lookat ~ ~ ~5
 /dummy actions bot move repeat
