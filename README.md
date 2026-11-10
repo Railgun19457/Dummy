@@ -82,7 +82,7 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 - `place` 使用主手方块对视线内目标方块进行放置
 - `sneak [toggle|on|off]` 切换潜行状态
 - `swap` 交换主手和副手物品
-- `use` 使用主手物品
+- `use` 使用主手物品；优先右键视线内 5 格范围的目标方块，支持斧头去皮、铲土、锄地等交互，没有方块交互时保留持续使用物品的行为
 - `stop [action]` 停止全部动作或指定动作
 
 ### 动作示例
@@ -91,6 +91,8 @@ Dummy 是一个面向高版本 Paper 服务端的假人插件，通过服务端�
 /dummy actions bot attack
 /dummy actions bot attack repeat interval:20
 /dummy actions bot attack repeat interval:20 duration:1200
+/dummy actions bot use
+/dummy actions bot use repeat interval:20
 /dummy actions bot look entity player repeat interval:1
 /dummy actions bot lookat ~ ~ ~5
 /dummy actions bot move repeat

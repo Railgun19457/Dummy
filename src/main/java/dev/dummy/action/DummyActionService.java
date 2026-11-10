@@ -17,6 +17,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
@@ -512,6 +513,28 @@ public final class DummyActionService {
     }
 
     private void use(Player player) {
+        if (player instanceof CraftPlayer craftPlayer) {
+            ServerPlayer serverPlayer = craftPlayer.getHandle();
+            if (serverPlayer.isUsingItem()) {
+                return;
+            }
+
+            HitResult target = serverPlayer.pick(5.0D, 1.0F, false);
+            if (target instanceof BlockHitResult hit && target.getType() == HitResult.Type.BLOCK) {
+                InteractionHand hand = InteractionHand.MAIN_HAND;
+                net.minecraft.world.item.ItemStack stack = serverPlayer.getItemInHand(hand);
+                InteractionResult result = serverPlayer.gameMode.useItemOn(serverPlayer, serverPlayer.level(), stack, hand, hit);
+                if (result.consumesAction()) {
+                    player.swingMainHand();
+                    dummyManager.markDirty(player.getName());
+                    return;
+                }
+                // A denied block interaction must not fall through to item use.
+                if (result == InteractionResult.FAIL) {
+                    return;
+                }
+            }
+        }
         player.swingMainHand();
         player.startUsingItem(EquipmentSlot.HAND);
     }

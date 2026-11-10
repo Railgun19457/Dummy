@@ -82,7 +82,7 @@ Available actions:
 - `place` Places the main-hand block against the looked-at block
 - `sneak [toggle|on|off]` Toggles or sets sneaking
 - `swap` Swaps main-hand and offhand items
-- `use` Uses the main-hand item
+- `use` Uses the main-hand item; first right-clicks the looked-at block within 5 blocks, supporting log stripping, path creation, tilling, and other block interactions, and falls back to ongoing item use when no block interaction handles the action
 - `stop [action]` Stops all actions or one specific action
 
 ### Action Examples
@@ -91,6 +91,8 @@ Available actions:
 /dummy actions bot attack
 /dummy actions bot attack repeat interval:20
 /dummy actions bot attack repeat interval:20 duration:1200
+/dummy actions bot use
+/dummy actions bot use repeat interval:20
 /dummy actions bot look entity player repeat interval:1
 /dummy actions bot lookat ~ ~ ~5
 /dummy actions bot move repeat
